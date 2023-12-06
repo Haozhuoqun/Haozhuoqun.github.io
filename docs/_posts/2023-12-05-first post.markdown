@@ -2,7 +2,6 @@
 layout: post
 title:  "Getting start on jekyll"
 date:   2023-12-05 22:39:25 -0600
-categories: tech
 ---
 
 It turned out that the simple

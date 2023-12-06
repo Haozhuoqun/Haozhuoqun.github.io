@@ -18,11 +18,16 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Hao, Zhuoqun 
+title: Hao, Zhuoqun
+is_user_page: true
+is_project_page: false
+logo: "/imgs/2.png"
+show_downloads: false
 email: zhuoqunhao@utexas.edu
 description: >- # this means to ignore newlines until "baseurl:"
-  | A hidden unnecessary gem
-  | 就是闲的搞个photo profolio
+  A hidden unnecessary gem
+
+  | photo profolio
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  haozhuoqun
