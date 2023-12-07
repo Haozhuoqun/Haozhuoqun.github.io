@@ -25,11 +25,8 @@ logo: "/imgs/2.png"
 show_downloads: false
 email: zhuoqunhao@utexas.edu
 description: >- # this means to ignore newlines until "baseurl:"
-  A hidden unnecessary gem
-
-  | photo profolio
+  An unnecessary hidden gem | photo profolio
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  haozhuoqun
 
 # Build settings

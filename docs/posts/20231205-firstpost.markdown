@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Getting start on jekyll"
+title:  "Solve the error when testing jekyll locally"
 date:   2023-12-05 22:39:25 -0600
 ---
 

@@ -14,5 +14,5 @@ author: VaBi
 
 [Kiev-4](/posts/20231206-kiev)
 
-
+[HDR image test](/posts/20231207-hdrtest)
 
