@@ -14,3 +14,4 @@ How about a test of your device's HDR capability now, if you have a HDR display 
 ![teton-hdr](/imgs/DSC_2993-hdr.jpg)
 
 [View other posts](/all-posts)
+

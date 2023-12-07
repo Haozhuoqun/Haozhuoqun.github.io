@@ -2,10 +2,15 @@
 layout: default
 title: All posts
 permalink: /all-posts/
-author: host
+author: VaBi
 ---
-啊这就是全部文章惹，手动添加捏
-[helloworld](/2023/12/04/hw)
-[First post](/2023/12/05/firstpost)
+啊这就是全部文章惹
+
+[helloworld](/posts/hw)
+
+[First post](/posts/20231205-firstpost)
+
+[Voigtländer Vitessa](/posts/20231206-vitessa)
+
 
 
