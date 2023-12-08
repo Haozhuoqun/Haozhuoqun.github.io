@@ -1,10 +1,18 @@
 ---
 layout: post
-title:  "HDR image support test"
+title:  "HDR images"
 date:   2023-12-07 12:39:25 -0600
 author: VaBi
 ---
 
-How about a test of your device's HDR image capability? If you have a HDR display and latest chrome, you should be able to  the stuning bright sky behind the mountains. 
+How about a test of your device's HDR image capability? If you have a HDR display and latest chrome, you should be able to  the stuning bright sky behind the mountains in Glacier NP. 
+![hdr](/imgs/utahhdr/DSC_2993-hdr.jpg)
 
-![teton-hdr](/imgs/DSC_2993-hdr.jpg)
+Same here, the HDR image really reveal the highlight details and layers, really like the slide films. 
+![hdr](/imgs/utahhdr/DSC_2062.jpg)
+
+![hdr](/imgs/utahhdr/DSC_2206.jpg)
+This is Bryce NP.
+![hdr](/imgs/utahhdr/DSC_2199-Pano.jpg)
+![hdr](/imgs/utahhdr/DSC_2293.jpg)
+![hdr](/imgs/utahhdr/DSC_3228.jpg)
