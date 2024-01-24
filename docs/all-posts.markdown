@@ -6,7 +6,7 @@ author: VaBi
 ---
 啊这就是全部文章惹
 
-[helloworld](/posts/hw)
+<!-- [helloworld](/posts/hw) -->
 
 [Test Jekyll locally error](/posts/20231205-firstpost)
 
@@ -16,3 +16,4 @@ author: VaBi
 
 [HDR images](/posts/20231207-hdrtest)
 
+[Seagull 203](/posts/20240124-seagull)
