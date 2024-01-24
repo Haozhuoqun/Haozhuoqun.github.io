@@ -6,5 +6,3 @@ author: VaBi
 ---
 
 hello,
-
-interesting.
