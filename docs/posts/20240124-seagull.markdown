@@ -4,18 +4,49 @@ title:  "Seagull 203 (海鸥 203)"
 date:   2024-01-24 9:39:25 -0600
 author: VaBi
 ---
-
+## Introduction
 Seagull 203 was first launched in 1963 in Shanghai. Since there's no stop mechanism in film advance lever, it could switch the format bewteen 645 or 6x6 before loading the film. The camera features an 'EV' chart written in Chinese which is pretty unique. 
-
-There's no way to focus using thumb, which is not common in 1960 rangefinder cameras, but the bright side is that the coupling between lens focus ring and rangefinder is simple and not easy to fail. 
-
 ![seagul203](/imgs/seagull/DSC_4013.jpg)
-![seagul203](/imgs/seagull/DSC_4026.jpg)
 ![seagul203](/imgs/seagull/DSC_4028.jpg)
-![seagul203](/imgs/seagull/DSC_4033.jpg)
-![seagul203](/imgs/seagull/DSC_4034.jpg)
-![seagul203](/imgs/seagull/DSC_4037.jpg)
-![seagul203](/imgs/seagull/DSC_4078.jpg)
-## Samples
 
-tbd
+&darr; f/6.3 1/300s iso 200
+![seagul203](/imgs/seagull/sg4.png)
+
+## Lens
+Seagull 203 uses a 75mm f/3.5 Kirkpatrick-Baez type of lens, which was invented in late 1890s and gave birth to the pupolar Tessar structure.  The lens is sharp at the middle but quickly degrade on edges. It is also quite soft at f/3.5, but the lens tastes sharp soon at f/5.6 and up to f/16.
+
+&darr; f/3.5 1/60s iso 200
+![seagul203](/imgs/seagull/sg1.jpeg)
+
+&darr; f/8 1/125s iso 200, AI colorized
+![seagul203](/imgs/seagull/sgc1.jpeg)
+
+&darr; f/8 1/300s iso 200, AI colorized
+![seagul203](/imgs/seagull/sgc2.jpg)
+
+## Features
+There's no way to focus using thumb, which is not common in 1960 rangefinder cameras, but the bright side is that the coupling between lens focus ring and rangefinder is simple and not easy to fail. 
+![seagul203](/imgs/seagull/DSC_4026.jpg)
+It uses a light indicator system that suggests the exposure setting based on the time of the day and overall weather, it's not the best but sometimes comes in handy. 
+![seagul203](/imgs/seagull/DSC_4033.jpg)
+
+&darr; f/8 1/300s iso 200, AI colorized
+![seagul203](/imgs/seagull/sgc4.png)
+
+&darr; f/8 1/300s iso 200
+![seagul203](/imgs/seagull/sg2.jpeg)
+
+One issue I encountered is that the front lens group is kind of loose and shaky when focus less than 10m, this could result in out-of-focuses. The body also prevents multi-exposure by default, by not letting you press the shutter without advancing films, however it could also be troublesome when you really want to do double-exposure. 
+![seagul203](/imgs/seagull/DSC_4037.jpg)
+
+&darr; f/5.6 1/125s iso 200, AI colorized
+![seagul203](/imgs/seagull/sgc3.jpeg)
+
+&darr; f/8 1/300s iso 200, double exposure
+![seagul203](/imgs/seagull/sg3.png)
+
+Overall a nice lens, reminds me of the tough getting-started time for Chinese industry. It lacks so many good features and really not easy to use, but it is always inspiring in that sense. 
+![seagul203](/imgs/seagull/DSC_4078.jpg)
+
+-- end --
+
