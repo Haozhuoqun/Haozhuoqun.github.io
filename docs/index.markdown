@@ -5,14 +5,13 @@
 layout: default
 ---
 ## Latest photos
-### Days and nights in Teton
+-----------------------------------------
+### Austin TX, Kodak 5207 w/ ECN-2 dev
 
 [View other posts](/all-posts)
 
-![teton-1](/imgs/DSC_2362.jpg)
-![teton-2](/imgs/DSC_2492.jpg)
-![teton-3](/imgs/DSC_2473.jpg)
-
-
+![austin](/imgs/Austin/Sheet-1.jpg)
+![austin-1](/imgs/Austin/austin-1.jpg)
+![austin-2](/imgs/Austin/austin-2.jpg)
 
 

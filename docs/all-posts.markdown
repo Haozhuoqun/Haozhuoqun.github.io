@@ -4,7 +4,6 @@ title: All posts
 permalink: /all-posts/
 author: VaBi
 ---
-啊这就是全部文章惹
 
 <!-- [helloworld](/posts/hw) -->
 
@@ -17,3 +16,5 @@ author: VaBi
 [HDR images](/posts/20231207-hdrtest)
 
 [Seagull 203](/posts/20240124-seagull)
+
+[Days and nights in Teton](/posts/20231120-Teton.markdown)
