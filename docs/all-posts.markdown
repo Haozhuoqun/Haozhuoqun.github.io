@@ -17,4 +17,6 @@ author: VaBi
 
 [Seagull 203](/posts/20240124-seagull)
 
-[Days and nights in Teton](/posts/20231120-Teton.markdown)
+[Days and nights in Teton](/posts/20231120-Teton)
+
+[Xiaomi 13 Ultra Samples](/posts/20240721-xiaomi)

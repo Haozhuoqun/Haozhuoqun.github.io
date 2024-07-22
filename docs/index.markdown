@@ -8,10 +8,8 @@ layout: default
 -----------------------------------------
 ### Austin TX, Kodak 5207 w/ ECN-2 dev
 
-[View other posts](/all-posts)
-
 ![austin](/imgs/Austin/Sheet-1.jpg)
 ![austin-1](/imgs/Austin/austin-1.jpg)
 ![austin-2](/imgs/Austin/austin-2.jpg)
 
-
+[View other posts](/all-posts)
