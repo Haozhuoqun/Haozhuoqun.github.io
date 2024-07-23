@@ -19,4 +19,6 @@ author: VaBi
 
 [Days and nights in Teton](/posts/20231120-Teton)
 
+[Houston zoo](/posts/20240201-houston)
+
 [Xiaomi 13 Ultra Samples](/posts/20240721-xiaomi)
