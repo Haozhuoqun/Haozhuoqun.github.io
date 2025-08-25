@@ -24,3 +24,5 @@ author: VaBi
 [Xiaomi 13 Ultra Samples](/posts/20240721-xiaomi)
 
 [Easytier + Navidrome](/posts/2025825-easytier)
+
+[Gannan](/posts/2025825-gannan)
