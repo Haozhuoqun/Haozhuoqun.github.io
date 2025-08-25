@@ -32,8 +32,8 @@ author: VaBi
 ![console](/imgs/easytierpost/console.png)
 
 然后创建一个网络，没啥好说的，自己想个<网络名称>，<密码>即可，这和你的登陆密码账户啥的没关系，创建好了选择网络运行就好了，成功的话如图所示，这里我还添加了其他设备到这个网络中所以显示设备比较多。
-![console2](/imgs/easytierpost/console2.png)
 
+![console](/imgs/easytierpost/console2.png)
 ### 3. 其他客户端安装easytier
 我是macos + android用户，直接去[下载页面](https://easytier.cn/guide/download.html)找就行了。mac的话需要接触gatekeeper的隔离：
 ```
