@@ -5,7 +5,7 @@ date:   2025-8-25 12:39:25 -0800
 author: VaBi
 ---
 
-### 使用HDR显示器和非移动端的chrome即可正确查看HDR照片
+### 使用HDR显示器和chrome即可正确查看HDR照片
 ### 阴天的莲宝叶则
 ![ganan1](/imgs/gannan/img_2.jpg)
 ![ganan1](/imgs/gannan/img_7.jpg)
