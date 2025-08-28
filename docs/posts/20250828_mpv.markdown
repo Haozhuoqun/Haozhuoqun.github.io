@@ -1,0 +1,39 @@
+---
+layout: post
+title:  "简陋实现用HDR播放SDR视频的方法"
+date:   2025-8-28 10:00:00 -0600
+author: VaBi
+---
+
+## 目的
+随着HDR显示设备的普及，完整利用其亮度范围播放传统SDR视频成了咱们贪心的目标。显然现在的电视机都内置了这个功能，但是想在mac或者windows pc上做到这一点，还是需要一点点功夫。
+
+## 步骤
+你需要hdr显示器，以及支持hdr回放的系统。无论是macos还是windows，最好的方法就是看能不能正确回放bilibili或者youtube上的HDR视频。
+
+软件我们选择mpv，经过实验发现使用mpv-backend的播放器应该也可以，但是不同的播放器实际上使用的mpv版本不太一样，此简陋教程就使用最原始的mpv。先安装MPV，[mpv installation](https://mpv.io/installation/)，mac我用的是homebrew。随后需要添加config文件，目录在 
+`~/.config/mpv/mpv.conf`，没有的话就创建一个。config内容如下：
+```conf
+profile=gpu-hq                  # use high-quality gpu rendering preset
+vo=gpu-next                     # use the next-gen gpu video output driver
+tone-mapping=bt.2446a           # apply bt.2446 method a for sdr to hdr tone mapping
+target-colorspace-hint=yes      # inform the display about the target colorspace
+dither-depth=10                 # apply 10-bit dithering to reduce color banding
+target-trc=pq                   # set target transfer function to pq (perceptual quantizer, used in hdr)
+target-prim=bt.2020             # set target color primaries to bt.2020 (wide color gamut used in hdr)
+target-peak=1600                # set peak brightness to 1600 nits (adjust based on your display's capability)
+hdr-compute-peak=yes            # dynamically compute hdr peak brightness for each frame
+inverse-tone-mapping=yes        # enable inverse tone mapping to expand sdr content to hdr range
+vf=format=primaries=bt.2020     # fix the desatruation issue
+```
+需要更改的主要是`target-peak`，无论macos还是windows这一套目前都能用（mpv版本0.40.0）
+
+播放的话需要命令行操作，也很简单，进入目录，
+```bash
+mpv <path to file>
+```
+即可。 windows的话我用的gui，就更方便啦，enjoy。
+
+## 参考资料
+[iina github discussions](https://github.com/iina/iina/discussions/4734)
+[mpv manual](https://mpv.io/manual/stable/)

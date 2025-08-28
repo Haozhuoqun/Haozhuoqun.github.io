@@ -26,3 +26,5 @@ author: VaBi
 [Easytier + Navidrome](/posts/2025825-easytier)
 
 [Gannan](/posts/2025825-gannan)
+
+[mpv based method to play SDR video in HDR](/posts/20250828_mpv)
