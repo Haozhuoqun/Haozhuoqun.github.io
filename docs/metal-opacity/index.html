@@ -11,6 +11,10 @@ layout: none
   <link rel="stylesheet" href="style.css">
   <!-- Plotly.js CDN -->
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <!-- KaTeX for math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -115,8 +119,92 @@ layout: none
     </div>
   </div>
 
-  <!-- 引入脚本 -->
-  <script src="metals.js"></script>
+  <!-- 物理原理说明（可折叠） -->
+  <details class="theory-panel">
+    <summary class="theory-summary">
+      <span class="theory-icon">▸</span>
+      <span class="theory-title">物理原理</span>
+      <span class="theory-hint">点击展开</span>
+    </summary>
+    <div class="theory-content">
+
+      <section class="theory-section">
+        <h3>三层模型结构</h3>
+        <p>本计算器模拟正入射下三层平面波导结构的光学响应：</p>
+        <div class="model-diagram">
+          空气 (<em>n</em><sub>0</sub> = 1.0) → 金属薄膜 (<em>Ñ</em> = <em>n</em> + i<em>k</em>) → 基底 (<em>n</em><sub>2</sub> = 1.0 / 1.5 / 2.0)
+        </div>
+        <p>其中金属的复折射率 <em>Ñ</em> 的实部 <em>n</em> 和虚部 <em>k</em> 随波长变化，数据来源于 Johnson &amp; Christy (1972) 和 Palik (1985) 的实测结果。消光系数 <em>k</em> 描述了金属对光的吸收能力。</p>
+      </section>
+
+      <section class="theory-section">
+        <h3>菲涅尔系数</h3>
+        <p>在两种介质 <em>a</em> 和 <em>b</em> 的界面上，正入射时的菲涅尔反射与透射系数为：</p>
+        <div class="formula-row">
+          <div class="formula">$$r_{ab} = \frac{\tilde{N}_a - \tilde{N}_b}{\tilde{N}_a + \tilde{N}_b}$$</div>
+          <div class="formula">$$t_{ab} = \frac{2\tilde{N}_a}{\tilde{N}_a + \tilde{N}_b}$$</div>
+        </div>
+        <p>对于本模型，有两个界面需要计算：空气→金属（界面 0→1）和 金属→基底（界面 1→2）。</p>
+      </section>
+
+      <section class="theory-section">
+        <h3>传播相位</h3>
+        <p>光波穿过厚度为 <em>d</em>、复折射率为 <em>Ñ</em> 的薄膜时，积累的复相位为：</p>
+        <div class="formula">$$\beta = \frac{2\pi \tilde{N} d}{\lambda}$$</div>
+        <p>其虚部导致振幅衰减（吸收），实部产生干涉相移。</p>
+      </section>
+
+      <section class="theory-section">
+        <h3>Airy 公式</h3>
+        <p>考虑薄膜上下界面间的多次反射-透射干涉，总透射与总反射系数由 Airy 公式（等价于传输矩阵法 TMM）给出：</p>
+        <div class="formula">$$t_{\text{total}} = \frac{t_{01} t_{12} e^{i\beta}}{1 + r_{01} r_{12} e^{2i\beta}}$$</div>
+        <div class="formula">$$r_{\text{total}} = \frac{r_{01} + r_{12} e^{2i\beta}}{1 + r_{01} r_{12} e^{2i\beta}}$$</div>
+      </section>
+
+      <section class="theory-section">
+        <h3>透光率、反射率与吸收率</h3>
+        <div class="formula-row">
+          <div class="formula">$$T = \frac{n_2}{n_0}\;|t_{\text{total}}|^2$$</div>
+          <div class="formula">$$R = |r_{\text{total}}|^2$$</div>
+          <div class="formula">$$A = 1 - T - R$$</div>
+        </div>
+        <p>由于金属的消光系数 <em>k</em> 通常在 2–10 之间（远大于透明介质），即使厚度仅几十纳米的薄膜也能显著衰减透射光强——这正是半透明金属镜面的物理原理。</p>
+        <div class="theory-note">
+          <strong>注：</strong>本计算中的 "吸收率" <em>A</em> 包括了金属薄膜内真吸收与散射损耗的总和，由能量守恒 <em>T + R + A = 1</em> 导出。
+        </div>
+      </section>
+
+    </div>
+  </details>
+
+  <!-- 引入 KaTeX 自动渲染脚本 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+      }
+
+      // 可折叠面板的箭头动画
+      const summary = document.querySelector('.theory-summary');
+      const icon = document.querySelector('.theory-icon');
+      if (summary && icon) {
+        summary.addEventListener('click', function() {
+          const details = this.closest('details');
+          if (details) {
+            setTimeout(() => {
+              icon.textContent = details.open ? '▾' : '▸';
+            }, 10);
+          }
+        });
+      }
+    });
+  </script>
   <script src="physics.js"></script>
   <script src="app.js"></script>
 </body>
