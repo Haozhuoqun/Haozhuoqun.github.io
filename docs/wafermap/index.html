@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Wafer Map Generator V3</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg-color: #f1f5f9; --panel-bg: #ffffff; --border: #e2e8f0; --text-main: #1e293b; --text-muted: #64748b; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; background: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 320px; background: var(--panel-bg); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 12px; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10; }
+        .main-content { flex: 1; padding: 20px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        h2 { margin-top: 0; font-size: 1.1rem; color: #0f172a; border-bottom: 2px solid var(--primary); padding-bottom: 6px; }
+        .input-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+        .input-row { display: flex; gap: 8px; }
+        .input-row .input-group { flex: 1; }
+        label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+        input[type="number"], select { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; outline: none; transition: border 0.2s; }
+        input[type="number"]:focus, select:focus { border-color: var(--primary); }
+        button { background: var(--primary); color: white; border: none; padding: 9px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 0.9rem; }
+        button:hover { background: var(--primary-hover); }
+        button.secondary { background: #64748b; }
+        button.secondary:hover { background: #475569; }
+        .dashboard { display: flex; gap: 12px; margin-bottom: 15px; flex-shrink: 0; flex-wrap: wrap; }
+        .stat-card { background: var(--panel-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); flex: 1; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); min-width: 100px; }
+        .stat-value { font-size: 1.4rem; font-weight: bold; color: var(--primary); margin-bottom: 4px; }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        .canvas-wrapper, .annotation-container { flex: 1; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; display: none; }
+        .canvas-wrapper.active, .annotation-container.active { display: block; }
+        canvas { width: 100%; height: 100%; cursor: grab; display: block; }
+        canvas:active { cursor: grabbing; }
+        .toolbar { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 5; }
+        .toolbar button { background: rgba(255,255,255,0.95); color: var(--text-main); border: 1px solid var(--border); padding: 6px 12px; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .toolbar button:hover { background: #f8fafc; }
+        .tooltip { position: absolute; background: rgba(15, 23, 42, 0.9); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; pointer-events: none; z-index: 100; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); white-space: nowrap; }
+        .tooltip span { font-weight: bold; color: #cbd5e1; }
+        .tab-bar { display: flex; gap: 0; margin-bottom: 0; flex-shrink: 0; border-bottom: 2px solid var(--border); }
+        .tab-btn { padding: 10px 20px; border: none; background: transparent; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; border-radius: 6px 6px 0 0; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: var(--panel-bg); }
+        .tab-btn:hover { color: var(--primary); }
+        .sweep-results { background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border); display: none; flex-direction: column; gap: 6px; margin-top: 8px; }
+        .unit-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; }
+        .unit-toggle label { margin: 0; font-size: 0.8rem; color: var(--primary); }
+        .unit-toggle select { width: 70px; padding: 4px 6px; font-size: 0.85rem; }
+        .utilization-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .util-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
+        .util-row .util-val { font-weight: bold; color: #16a34a; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Wafer Parameters</h2>
+    <div class="unit-toggle">
+        <label>Unit System:</label>
+        <select id="unit_select" onchange="switchUnit()">
+            <option value="mm">mm</option>
+            <option value="um">µm</option>
+        </select>
+    </div>
+    <div class="input-row">
+        <div class="input-group"><label class="unit-label">Die Size X (mm)</label><input type="number" id="die_x" value="24" step="0.001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Die Size Y (mm)</label><input type="number" id="die_y" value="31" step="0.001" onchange="triggerUpdate()"></div>
+    </div>
+    <div class="input-row">
+        <div class="input-group"><label class="unit-label">Scribe X (mm)</label><input type="number" id="scribe_x" value="2" step="0.001" onchange="onScribeChange()"></div>
+        <div class="input-group"><label class="unit-label">Scribe Y (mm)</label><input type="number" id="scribe_y" value="2" step="0.001" onchange="onScribeChange()"></div>
+    </div>
+    <div class="input-row">
+        <div class="input-group"><label class="unit-label">Overlap X (mm)</label><input type="number" id="overlap_x" value="1" step="0.001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Overlap Y (mm)</label><input type="number" id="overlap_y" value="1" step="0.001" onchange="triggerUpdate()"></div>
+    </div>
+    <div class="input-row">
+        <div class="input-group"><label>Die Array X</label><input type="number" id="array_x" value="1" step="1" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label>Die Array Y</label><input type="number" id="array_y" value="1" step="1" onchange="triggerUpdate()"></div>
+    </div>
+    <div class="input-group"><label class="unit-label">Wafer Diameter (mm)</label><input type="number" id="wafer_dia" value="300" step="0.001" onchange="triggerUpdate()"></div>
+    <div class="input-group"><label class="unit-label">Edge Clearance (mm)</label><input type="number" id="clearance" value="5" step="0.001" onchange="triggerUpdate()"></div>
+    <div class="input-group"><label class="unit-label">Flat Height (mm)</label><input type="number" id="flat_height" value="0" step="0.001" min="0" onchange="triggerUpdate()"></div>
+    <div class="input-row">
+        <div class="input-group"><label class="unit-label">Grid Offset X (mm)</label><input type="number" id="offset_x" value="0" step="0.001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Grid Offset Y (mm)</label><input type="number" id="offset_y" value="0" step="0.001" onchange="triggerUpdate()"></div>
+    </div>
+
+    <h2>Utilization</h2>
+    <div class="utilization-box">
+        <div class="util-row"><span>MFU (Shot/26×33):</span><span class="util-val" id="util_mfu">—</span></div>
+        <div class="util-row"><span>Wafer Area Util.:</span><span class="util-val" id="util_area">—</span></div>
+        <div class="util-row"><span>Shot Size:</span><span class="util-val" id="util_shot">—</span></div>
+        <div class="util-row"><span>Step Size:</span><span class="util-val" id="util_step">—</span></div>
+    </div>
+
+    <h2>Optimization</h2>
+    <button onclick="sweepOffsets()" class="secondary" id="sweepBtn">Sweep Max Gross Die</button>
+    <div id="sweep_ui" class="sweep-results">
+        <label>Best Configurations Found:</label>
+        <select id="sweep_selector" onchange="applySelectedSweep()"></select>
+    </div>
+
+    <h2>Data & Reports</h2>
+    <div class="input-row">
+        <button onclick="exportCSV()" class="secondary" style="flex:1;">Export CSV</button>
+        <button onclick="document.getElementById('file_import').click()" class="secondary" style="flex:1;">Import CSV</button>
+        <input type="file" id="file_import" style="display:none" accept=".csv" onchange="importCSV(event)">
+    </div>
+    <button onclick="exportVectorPDF()" style="background: #16a34a;">Generate PDF Report</button>
+</div>
+
+<div class="main-content">
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('wafer')">Wafer Map</button>
+        <button class="tab-btn" onclick="switchTab('annotation')">Parameter Guide</button>
+    </div>
+    <div class="dashboard">
+        <div class="stat-card"><div class="stat-value" id="stat_dies">0</div><div class="stat-label">Valid Gross Dies</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat_full">0</div><div class="stat-label">Full Cells</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat_partial">0</div><div class="stat-label">Partial Cells</div></div>
+    </div>
+    
+    <div class="canvas-wrapper active" id="canvasContainer">
+        <div class="toolbar"><button onclick="resetView()">Reset View</button></div>
+        <canvas id="waferCanvas"></canvas>
+        <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <div class="annotation-container" id="annotationContainer">
+        <div class="toolbar">
+            <button onclick="resetAnnotationView()">Reset View</button>
+            <button onclick="resetLabelPositions()">Reset Labels</button>
+            <button onclick="toggleLabels()" id="toggleLabelsBtn">Hide Labels</button>
+        </div>
+        <canvas id="annotationCanvas"></canvas>
+    </div>
+</div>
+
+<script>
+    let currentData = { diesCount: 0, fullCells: 0, partialCells: 0, cells: [], p: {} };
+    let viewTransform = { x: 0, y: 0, scale: 1 };
+    let isDragging = false, dragStart = { x: 0, y: 0 }, hoveredDie = null;
+    let activeTab = 'wafer';
+    let showLabels = true;
+    let labelOffsets = {};
+    let labelBounds = {};
+    let activeDragLabel = null, dragLabelStart = { x: 0, y: 0 };
+    let currentUnit = 'mm';
+
+    function toInternal(val) { return currentUnit === 'um' ? val / 1000 : val; }
+    function fromInternal(val) { return currentUnit === 'um' ? val * 1000 : val; }
+    function unitLabel() { return currentUnit === 'um' ? 'µm' : 'mm'; }
+
+    function switchUnit() {
+        const newUnit = document.getElementById('unit_select').value;
+        if (newUnit === currentUnit) return;
+        const factor = (newUnit === 'um') ? 1000 : 0.001;
+        const fields = ['die_x','die_y','scribe_x','scribe_y','overlap_x','overlap_y','wafer_dia','clearance','flat_height','offset_x','offset_y'];
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            el.value = (parseFloat(el.value) * factor).toFixed(6);
+        });
+        currentUnit = newUnit;
+        updateUnitLabels();
+        triggerUpdate();
+    }
+
+    function updateUnitLabels() {
+        const u = unitLabel();
+        document.querySelectorAll('.unit-label').forEach(el => {
+            el.textContent = el.textContent.replace(/\(mm\)|\(µm\)/, `(${u})`);
+        });
+    }
+
+    function getParams() {
+        const scribeX = toInternal(parseFloat(document.getElementById('scribe_x').value));
+        const scribeY = toInternal(parseFloat(document.getElementById('scribe_y').value));
+        let overlapX = Math.max(0, Math.min(toInternal(parseFloat(document.getElementById('overlap_x').value)), scribeX));
+        let overlapY = Math.max(0, Math.min(toInternal(parseFloat(document.getElementById('overlap_y').value)), scribeY));
+        document.getElementById('overlap_x').value = fromInternal(overlapX).toFixed(6);
+        document.getElementById('overlap_y').value = fromInternal(overlapY).toFixed(6);
+        return {
+            dieX: toInternal(parseFloat(document.getElementById('die_x').value)),
+            dieY: toInternal(parseFloat(document.getElementById('die_y').value)),
+            scribeX, scribeY, overlapX, overlapY,
+            arrayX: parseInt(document.getElementById('array_x').value),
+            arrayY: parseInt(document.getElementById('array_y').value),
+            waferDia: toInternal(parseFloat(document.getElementById('wafer_dia').value)),
+            clearance: toInternal(parseFloat(document.getElementById('clearance').value)),
+            flatHeight: toInternal(parseFloat(document.getElementById('flat_height').value)),
+            offsetX: toInternal(parseFloat(document.getElementById('offset_x').value)),
+            offsetY: toInternal(parseFloat(document.getElementById('offset_y').value)),
+            unit: currentUnit
+        };
+    }
+
+    function onScribeChange() {
+        const sx = toInternal(parseFloat(document.getElementById('scribe_x').value));
+        const sy = toInternal(parseFloat(document.getElementById('scribe_y').value));
+        let ox = toInternal(parseFloat(document.getElementById('overlap_x').value));
+        let oy = toInternal(parseFloat(document.getElementById('overlap_y').value));
+        if (ox > sx) document.getElementById('overlap_x').value = fromInternal(sx).toFixed(6);
+        if (oy > sy) document.getElementById('overlap_y').value = fromInternal(sy).toFixed(6);
+        triggerUpdate();
+    }
+
+    function getShotStep(p) {
+        const shotX = (p.dieX + p.scribeX) * p.arrayX + p.overlapX;
+        const shotY = (p.dieY + p.scribeY) * p.arrayY + p.overlapY;
+        const stepX = shotX - p.overlapX;
+        const stepY = shotY - p.overlapY;
+        return { shotX, shotY, stepX, stepY };
+    }
+
+    function calculateWaferMap(p) {
+        const { shotX, shotY, stepX, stepY } = getShotStep(p);
+        const radius = p.waferDia / 2;
+        const effRadius = radius - p.clearance;
+        const effRadiusSq = effRadius * effRadius;
+        const radiusSq = radius * radius;
+        const flatY = -radius + p.flatHeight;
+
+        const maxCellsX = Math.ceil(radius * 2 / stepX) + 2;
+        const maxCellsY = Math.ceil(radius * 2 / stepY) + 2;
+
+        let cells = [], diesCount = 0, fullCount = 0, partialCount = 0;
+
+        for (let i = -maxCellsX; i <= maxCellsX; i++) {
+            for (let j = -maxCellsY; j <= maxCellsY; j++) {
+                const cx = i * stepX + p.offsetX;
+                const cy = j * stepY + p.offsetY;
+
+                const cCorners = [
+                    {x: cx - shotX/2, y: cy - shotY/2}, {x: cx + shotX/2, y: cy - shotY/2},
+                    {x: cx - shotX/2, y: cy + shotY/2}, {x: cx + shotX/2, y: cy + shotY/2}
+                ];
+
+                const allInCircle = cCorners.every(c => (c.x*c.x + c.y*c.y) <= effRadiusSq);
+                const allAboveFlat = cCorners.every(c => c.y >= flatY);
+                const anyInWafer = cCorners.some(c => (c.x*c.x + c.y*c.y) <= radiusSq && c.y >= flatY);
+
+                let cellType = 'none';
+                if (allInCircle && allAboveFlat) { cellType = 'full'; fullCount++; }
+                else if (anyInWafer) { cellType = 'partial'; partialCount++; }
+                if (cellType === 'none') continue;
+
+                let cellDies = [];
+                const finalDieX = p.dieX + p.scribeX;
+                const finalDieY = p.dieY + p.scribeY;
+                for (let di = 0; di < p.arrayX; di++) {
+                    for (let dj = 0; dj < p.arrayY; dj++) {
+                        const dx = cx + (di - (p.arrayX - 1) / 2) * finalDieX;
+                        const dy = cy + (dj - (p.arrayY - 1) / 2) * finalDieY;
+                        const dCorners = [
+                            {x: dx - p.dieX/2 - p.scribeX/2, y: dy - p.dieY/2 - p.scribeY/2},
+                            {x: dx + p.dieX/2 + p.scribeX/2, y: dy - p.dieY/2 - p.scribeY/2},
+                            {x: dx - p.dieX/2 - p.scribeX/2, y: dy + p.dieY/2 + p.scribeY/2},
+                            {x: dx + p.dieX/2 + p.scribeX/2, y: dy + p.dieY/2 + p.scribeY/2}
+                        ];
+                        const dieInCircle = dCorners.every(c => (c.x*c.x + c.y*c.y) <= effRadiusSq);
+                        const dieAboveFlat = dCorners.every(c => c.y >= flatY);
+                        const dieValid = dieInCircle && dieAboveFlat;
+                        if (dieValid) diesCount++;
+                        cellDies.push({ x: dx, y: dy, valid: dieValid, logicIdx: `${di},${dj}` });
+                    }
+                }
+                cells.push({ x: cx, y: cy, type: cellType, dies: cellDies });
+            }
+        }
+        return { cells, diesCount, fullCells: fullCount, partialCells: partialCount, p };
+    }
+
+    function updateUtilization() {
+        const p = getParams();
+        const { shotX, shotY, stepX, stepY } = getShotStep(p);
+        const mfu = (shotX * shotY) / (26 * 33);
+        const waferArea = Math.PI * Math.pow(p.waferDia / 2, 2);
+        const totalDieArea = currentData.diesCount * (p.dieX * p.dieY);
+        const areaUtil = waferArea > 0 ? totalDieArea / waferArea : 0;
+        document.getElementById('util_mfu').textContent = (mfu * 100).toFixed(2) + '%';
+        document.getElementById('util_area').textContent = (areaUtil * 100).toFixed(2) + '%';
+        document.getElementById('util_shot').textContent = `${fromInternal(shotX).toFixed(3)} × ${fromInternal(shotY).toFixed(3)} ${unitLabel()}`;
+        document.getElementById('util_step').textContent = `${fromInternal(stepX).toFixed(3)} × ${fromInternal(stepY).toFixed(3)} ${unitLabel()}`;
+    }
+
+    // === SWEEP: coarse step + fine step = 10um (0.01mm) ===
+    function sweepOffsets() {
+        const btn = document.getElementById('sweepBtn');
+        const originalText = btn.innerText;
+        btn.innerText = 'Sweeping...'; btn.disabled = true;
+
+        setTimeout(() => {
+            const p = getParams();
+            const { stepX, stepY } = getShotStep(p);
+
+            let maxDies = 0, coarseBests = [];
+            // Coarse: ~5% of step
+            const coarseStepX = Math.max(0.01, stepX / 20);
+            const coarseStepY = Math.max(0.01, stepY / 20);
+
+            for (let ox = 0; ox < stepX; ox += coarseStepX) {
+                for (let oy = 0; oy < stepY; oy += coarseStepY) {
+                    let res = calculateWaferMap({...p, offsetX: ox, offsetY: oy});
+                    if (res.diesCount > maxDies) { maxDies = res.diesCount; coarseBests = [{ox, oy, count: res.diesCount}]; }
+                    else if (res.diesCount === maxDies && maxDies > 0) { coarseBests.push({ox, oy, count: res.diesCount}); }
+                }
+            }
+
+            // Fine step: 10um = 0.01mm
+            const fineStep = 0.01;
+            const searchRadius = Math.max(coarseStepX, coarseStepY);
+            let finalBests = [], finalMaxDies = maxDies, searchedCenters = [];
+
+            for (let cb of coarseBests) {
+                let isDuplicate = searchedCenters.some(sc => Math.abs(sc.ox - cb.ox) < searchRadius && Math.abs(sc.oy - cb.oy) < searchRadius);
+                if (isDuplicate) continue;
+                searchedCenters.push(cb);
+                const startX = Math.max(0, cb.ox - searchRadius), endX = Math.min(stepX, cb.ox + searchRadius);
+                const startY = Math.max(0, cb.oy - searchRadius), endY = Math.min(stepY, cb.oy + searchRadius);
+                for (let ox = startX; ox <= endX; ox += fineStep) {
+                    for (let oy = startY; oy <= endY; oy += fineStep) {
+                        let res = calculateWaferMap({...p, offsetX: ox, offsetY: oy});
+                        if (res.diesCount > finalMaxDies) { finalMaxDies = res.diesCount; finalBests = [{ox, oy, count: res.diesCount}]; }
+                        else if (res.diesCount === finalMaxDies && finalMaxDies > 0 && finalBests.length < 20) { finalBests.push({ox, oy, count: res.diesCount}); }
+                    }
+                }
+            }
+            if (finalBests.length === 0) finalBests = coarseBests.slice(0, 20);
+
+            const selector = document.getElementById('sweep_selector');
+            selector.innerHTML = '';
+            finalBests.forEach(cfg => {
+                let opt = document.createElement('option');
+                opt.value = `${cfg.ox},${cfg.oy}`;
+                opt.text = `Dies: ${cfg.count} | Offset: (${fromInternal(cfg.ox).toFixed(6)}, ${fromInternal(cfg.oy).toFixed(6)}) ${unitLabel()}`;
+                selector.appendChild(opt);
+            });
+            document.getElementById('sweep_ui').style.display = 'flex';
+            if (finalBests.length > 0) applySelectedSweep();
+            btn.innerText = originalText; btn.disabled = false;
+        }, 50);
+    }
+
+    function applySelectedSweep() {
+        const val = document.getElementById('sweep_selector').value.split(',');
+        document.getElementById('offset_x').value = fromInternal(parseFloat(val[0])).toFixed(6);
+        document.getElementById('offset_y').value = fromInternal(parseFloat(val[1])).toFixed(6);
+        triggerUpdate();
+    }
+
+    // === CANVAS RENDERING ===
+    const canvas = document.getElementById('waferCanvas');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('tooltip');
+    let dpr = window.devicePixelRatio || 1, cssW = 0, cssH = 0;
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        cssW = rect.width; cssH = rect.height;
+        canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px'; canvas.style.height = rect.height + 'px';
+        renderCanvas();
+    }
+
+    function triggerUpdate() {
+        currentData = calculateWaferMap(getParams());
+        document.getElementById('stat_dies').innerText = currentData.diesCount;
+        document.getElementById('stat_full').innerText = currentData.fullCells;
+        document.getElementById('stat_partial').innerText = currentData.partialCells;
+        updateUtilization();
+        resetView();
+        if (activeTab === 'annotation') renderAnnotation();
+    }
+
+    function resetView() { viewTransform = { x: 0, y: 0, scale: 1 }; renderCanvas(); }
+
+    function renderCanvas() {
+        if (!currentData.p.waferDia) return;
+        const p = currentData.p, radius = p.waferDia / 2, w = canvas.width, h = canvas.height;
+        const flatY = -radius + p.flatHeight;
+        const pitchX = p.dieX + p.scribeX; // scribe-center-to-scribe-center pitch
+        const pitchY = p.dieY + p.scribeY;
+
+        ctx.clearRect(0, 0, w, h); ctx.save(); ctx.scale(dpr, dpr);
+        ctx.translate(cssW/2 + viewTransform.x, cssH/2 + viewTransform.y);
+        const baseScale = (Math.min(cssW, cssH) * 0.95) / p.waferDia;
+        const totalScale = baseScale * viewTransform.scale;
+        ctx.scale(totalScale, -totalScale);
+        const lw = (desired) => Math.max(0.5, desired) / totalScale;
+
+        // Wafer circle
+        ctx.beginPath(); ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#f8fafc'; ctx.fill(); ctx.strokeStyle = '#2563eb'; ctx.lineWidth = lw(1.5); ctx.stroke();
+
+        // Effective radius (clearance)
+        ctx.beginPath(); ctx.arc(0, 0, radius - p.clearance, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#16a34a'; ctx.setLineDash([6/totalScale, 6/totalScale]); ctx.lineWidth = lw(1); ctx.stroke(); ctx.setLineDash([]);
+
+        // Flat line (red)
+        if (p.flatHeight > 0) {
+            const flatHalfWidth = Math.sqrt(Math.max(0, radius * radius - flatY * flatY));
+            ctx.beginPath(); ctx.moveTo(-flatHalfWidth, flatY); ctx.lineTo(flatHalfWidth, flatY);
+            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = lw(2); ctx.stroke();
+            ctx.save(); ctx.beginPath(); ctx.rect(-radius, -radius, radius*2, flatY + radius); ctx.clip();
+            ctx.beginPath(); ctx.arc(0, 0, radius, 0, 2*Math.PI);
+            ctx.fillStyle = 'rgba(220,38,38,0.06)'; ctx.fill(); ctx.restore();
+        }
+
+        // === Scribe center-line grid (replaces shot boundary) ===
+        // Clip to wafer circle for clean edges
+        ctx.save();
+        ctx.beginPath(); ctx.arc(0, 0, radius, 0, 2 * Math.PI); ctx.clip();
+
+        ctx.strokeStyle = 'rgba(100, 116, 139, 0.30)';
+        ctx.lineWidth = lw(0.5);
+        ctx.setLineDash([4/totalScale, 4/totalScale]);
+
+        // Determine grid origin: align to die placement
+        // Die centers are at offsetX + n*pitchX; scribe centers are offset by pitchX/2
+        const gridOriginX = p.offsetX + (p.arrayX % 2 === 1 ? pitchX / 2 : 0);
+        const gridOriginY = p.offsetY + (p.arrayY % 2 === 1 ? pitchY / 2 : 0);
+        const nLinesX = Math.ceil(radius / pitchX) + 2;
+        const nLinesY = Math.ceil(radius / pitchY) + 2;
+
+        // Vertical scribe center lines
+        for (let n = -nLinesX; n <= nLinesX; n++) {
+            const gx = gridOriginX + n * pitchX;
+            if (Math.abs(gx) > radius + pitchX) continue;
+            ctx.beginPath(); ctx.moveTo(gx, -radius); ctx.lineTo(gx, radius); ctx.stroke();
+        }
+        // Horizontal scribe center lines
+        for (let n = -nLinesY; n <= nLinesY; n++) {
+            const gy = gridOriginY + n * pitchY;
+            if (Math.abs(gy) > radius + pitchY) continue;
+            ctx.beginPath(); ctx.moveTo(-radius, gy); ctx.lineTo(radius, gy); ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.restore(); // remove clip
+
+        // Dies
+        currentData.cells.forEach(cell => {
+            cell.dies.forEach(die => {
+                if (die.valid) {
+                    const isHovered = hoveredDie === die;
+                    ctx.fillStyle = isHovered ? 'rgba(59, 130, 246, 0.85)' : (cell.type === 'full' ? 'rgba(134, 239, 172, 0.75)' : 'rgba(253, 224, 71, 0.75)');
+                    ctx.strokeStyle = isHovered ? '#1d4ed8' : (cell.type === 'full' ? '#16a34a' : '#ca8a04');
+                    ctx.lineWidth = lw(isHovered ? 1.2 : 0.4);
+                    ctx.fillRect(die.x - p.dieX/2, die.y - p.dieY/2, p.dieX, p.dieY);
+                    ctx.strokeRect(die.x - p.dieX/2, die.y - p.dieY/2, p.dieX, p.dieY);
+                }
+            });
+        });
+
+        // Notch (bottom, pointing UP into wafer)
+        const notchH = radius * 0.03, notchW = radius * 0.025, ny = -radius;
+        ctx.beginPath(); ctx.moveTo(-notchW, ny); ctx.lineTo(0, ny + notchH); ctx.lineTo(notchW, ny); ctx.closePath();
+        ctx.fillStyle = '#2563eb'; ctx.fill();
+
+        ctx.restore();
+    }
+
+    canvas.addEventListener('mousedown', e => { isDragging = true; dragStart = { x: e.clientX - viewTransform.x, y: e.clientY - viewTransform.y }; canvas.style.cursor = 'grabbing'; });
+    window.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = 'grab'; });
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        if (isDragging) {
+            viewTransform.x = e.clientX - dragStart.x; viewTransform.y = e.clientY - dragStart.y;
+            requestAnimationFrame(renderCanvas); tooltip.style.display = 'none';
+        } else {
+            const baseScale = (Math.min(cssW, cssH) * 0.95) / currentData.p.waferDia;
+            const totalScale = baseScale * viewTransform.scale;
+            const lx = (mx - cssW/2 - viewTransform.x) / totalScale;
+            const ly = -(my - cssH/2 - viewTransform.y) / totalScale;
+            const p = currentData.p; let found = null;
+            for (let cell of currentData.cells) {
+                for (let die of cell.dies) {
+                    if (die.valid && Math.abs(lx - die.x) <= p.dieX/2 && Math.abs(ly - die.y) <= p.dieY/2) { found = { ...die, cellType: cell.type }; break; }
+                }
+                if (found) break;
+            }
+            if (found !== hoveredDie) { hoveredDie = found; requestAnimationFrame(renderCanvas); }
+            if (found) {
+                tooltip.style.display = 'block'; tooltip.style.left = (mx + 15) + 'px'; tooltip.style.top = (my + 15) + 'px';
+                tooltip.innerHTML = `Pos: <span>(${fromInternal(found.x).toFixed(6)}, ${fromInternal(found.y).toFixed(6)}) ${unitLabel()}</span><br>Type: <span>${found.cellType.toUpperCase()} CELL</span>`;
+            } else { tooltip.style.display = 'none'; }
+        }
+    });
+    canvas.addEventListener('mouseleave', () => { hoveredDie = null; tooltip.style.display = 'none'; requestAnimationFrame(renderCanvas); });
+    canvas.addEventListener('wheel', e => {
+        e.preventDefault();
+        const zoomFactor = Math.exp((e.deltaY < 0 ? 1 : -1) * 0.08);
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left - cssW/2, my = e.clientY - rect.top - cssH/2;
+        viewTransform.x = mx - (mx - viewTransform.x) * zoomFactor;
+        viewTransform.y = my - (my - viewTransform.y) * zoomFactor;
+        viewTransform.scale = Math.max(0.05, Math.min(viewTransform.scale * zoomFactor, 40));
+        requestAnimationFrame(renderCanvas);
+    });
+
+    // === PDF ===
+    function fmt6(val) { return fromInternal(val).toFixed(6); }
+
+    function drawPdfTable(doc, headers, rows, startX, startY, colWidths, options = {}) {
+        const { headerBg = [37, 99, 235], headerTextColor = [255, 255, 255], rowBg1 = [255, 255, 255], rowBg2 = [241, 245, 249], borderColor = [200, 200, 200], fontSz = 10, rowH = 10, padding = 2 } = options;
+        const totalW = colWidths.reduce((a, b) => a + b, 0); let y = startY;
+        doc.setFillColor(...headerBg); doc.rect(startX, y, totalW, rowH, 'F'); doc.setTextColor(...headerTextColor); doc.setFontSize(fontSz);
+        let cx = startX + padding;
+        headers.forEach((h, i) => { doc.text(h, cx, y + rowH - 2); cx += colWidths[i]; });
+        y += rowH;
+        rows.forEach((row, ri) => {
+            doc.setFillColor(...(ri % 2 === 0 ? rowBg1 : rowBg2)); doc.rect(startX, y, totalW, rowH, 'F');
+            doc.setDrawColor(...borderColor); doc.setLineWidth(0.1); cx = startX;
+            colWidths.forEach(w => { doc.line(cx, y, cx, y + rowH); cx += w; });
+            doc.setTextColor(30, 41, 59); cx = startX + padding;
+            row.forEach((cell, i) => { doc.text(String(cell), cx, y + rowH - 2); cx += colWidths[i]; });
+            doc.line(startX, y + rowH, startX + totalW, y + rowH); y += rowH;
+        });
+        doc.setDrawColor(...borderColor); doc.setLineWidth(0.3); doc.rect(startX, startY, totalW, y - startY, 'S');
+        return y;
+    }
+
+    function exportVectorPDF() {
+        const { jsPDF } = window.jspdf; const doc = new jsPDF(); const p = currentData.p;
+        const { shotX, shotY, stepX, stepY } = getShotStep(p);
+        const today = new Date().toLocaleString();
+        const u = unitLabel();
+        const radius = p.waferDia / 2;
+        const flatY = -radius + p.flatHeight;
+
+        const drawHeader = (title) => { doc.setFillColor(37, 99, 235); doc.rect(0, 0, 210, 25, 'F'); doc.setTextColor(255, 255, 255); doc.setFontSize(20); doc.text(title, 105, 16, {align: 'center'}); doc.setTextColor(0, 0, 0); };
+
+        // Page 1
+        drawHeader("Wafer Map Analysis Report"); doc.setFontSize(14); doc.text("1. Wafer Summary", 20, 45); doc.setFontSize(11); doc.text(`Generated On: ${today}`, 20, 55);
+        doc.setFillColor(241, 245, 249); doc.rect(20, 65, 170, 40, 'F'); doc.setFontSize(16); doc.setTextColor(37, 99, 235); doc.text("Total Gross Dies:", 30, 80);
+        doc.setFontSize(24); doc.text(currentData.diesCount.toString(), 140, 80); doc.setFontSize(12); doc.setTextColor(0,0,0);
+        doc.text(`Full Cells: ${currentData.fullCells}`, 30, 95); doc.text(`Partial Cells: ${currentData.partialCells}`, 100, 95);
+
+        // Page 2: Vector Map
+        doc.addPage(); drawHeader("Vector Wafer Map"); doc.setFontSize(10); doc.text("Vector format — lossless zoom", 105, 32, {align: 'center'});
+        const cx = 105, cy = 150, maxPdfSize = 180, scale = maxPdfSize / p.waferDia;
+        doc.setFillColor(248, 250, 252); doc.circle(cx, cy, radius * scale, 'F');
+        doc.setLineWidth(0.5); doc.setDrawColor(37, 99, 235); doc.circle(cx, cy, radius * scale, 'S');
+        doc.setLineWidth(0.2); doc.setDrawColor(22, 163, 74); doc.circle(cx, cy, (radius - p.clearance) * scale, 'S');
+
+        // Flat line
+        if (p.flatHeight > 0) {
+            const flatHalfW = Math.sqrt(Math.max(0, radius*radius - flatY*flatY)) * scale;
+            const flatPdfY = cy - flatY * scale;
+            doc.setDrawColor(220, 38, 38); doc.setLineWidth(0.6);
+            doc.line(cx - flatHalfW, flatPdfY, cx + flatHalfW, flatPdfY);
+        }
+
+        // Scribe center grid in PDF (clipped to circle via manual check)
+        const pitchX = p.dieX + p.scribeX, pitchY = p.dieY + p.scribeY;
+        const gridOX = p.offsetX + (p.arrayX % 2 === 1 ? pitchX / 2 : 0);
+        const gridOY = p.offsetY + (p.arrayY % 2 === 1 ? pitchY / 2 : 0);
+        doc.setDrawColor(150, 160, 180); doc.setLineWidth(0.08);
+        const nLX = Math.ceil(radius / pitchX) + 1, nLY = Math.ceil(radius / pitchY) + 1;
+        for (let n = -nLX; n <= nLX; n++) {
+            const gx = gridOX + n * pitchX;
+            const halfChord = Math.sqrt(Math.max(0, radius*radius - gx*gx));
+            if (halfChord > 0) doc.line(cx + gx*scale, cy - halfChord*scale, cx + gx*scale, cy + halfChord*scale);
+        }
+        for (let n = -nLY; n <= nLY; n++) {
+            const gy = gridOY + n * pitchY;
+            const halfChord = Math.sqrt(Math.max(0, radius*radius - gy*gy));
+            if (halfChord > 0) doc.line(cx - halfChord*scale, cy - gy*scale, cx + halfChord*scale, cy - gy*scale);
+        }
+
+        // Dies
+        currentData.cells.forEach(cell => {
+            cell.dies.forEach(die => {
+                if (die.valid) {
+                    doc.setFillColor(cell.type === 'full' ? 134 : 253, cell.type === 'full' ? 239 : 224, cell.type === 'full' ? 172 : 71);
+                    doc.setDrawColor(cell.type === 'full' ? 22 : 202, cell.type === 'full' ? 163 : 138, cell.type === 'full' ? 74 : 4);
+                    doc.setLineWidth(0.1);
+                    doc.rect(cx + (die.x - p.dieX/2) * scale, cy - (die.y + p.dieY/2) * scale, p.dieX * scale, p.dieY * scale, 'FD');
+                }
+            });
+        });
+
+        // Notch (pointing UP into wafer)
+        const notchH = radius * 0.03 * scale, notchW = radius * 0.025 * scale, nr = radius * scale;
+        doc.setFillColor(37, 99, 235); doc.setDrawColor(37, 99, 235); doc.setLineWidth(0.1);
+        doc.triangle(cx - notchW, cy + nr, cx, cy + nr - notchH, cx + notchW, cy + nr, 'FD');
+
+        // Page 3: Reticle Parameters
+        doc.addPage(); drawHeader("Reticle Parameters & Configuration"); doc.setFontSize(13); doc.text("2. Reticle (Shot) Configuration", 20, 45);
+        drawPdfTable(doc, ['Parameter', 'Value', 'Unit', 'Description'], [
+            ['Die Size X', fmt6(p.dieX), u, 'Single die width'],
+            ['Die Size Y', fmt6(p.dieY), u, 'Single die height'],
+            ['Scribe Line X', fmt6(p.scribeX), u, 'Horizontal scribe width'],
+            ['Scribe Line Y', fmt6(p.scribeY), u, 'Vertical scribe width'],
+            ['Die Array X', String(p.arrayX), 'dies', 'Dies per shot (horizontal)'],
+            ['Die Array Y', String(p.arrayY), 'dies', 'Dies per shot (vertical)'],
+            ['Shot Size X', fmt6(shotX), u, '(DieX+ScribeX)×ArrayX + OverlapX'],
+            ['Shot Size Y', fmt6(shotY), u, '(DieY+ScribeY)×ArrayY + OverlapY'],
+            ['Step Size X', fmt6(stepX), u, 'Shot Size X - Overlap X'],
+            ['Step Size Y', fmt6(stepY), u, 'Shot Size Y - Overlap Y'],
+            ['Overlap X', fmt6(p.overlapX), u, 'Shot Size X - Step Size X'],
+            ['Overlap Y', fmt6(p.overlapY), u, 'Shot Size Y - Step Size Y'],
+        ], 20, 55, [42, 38, 20, 70], { rowH: 10, fontSz: 8 });
+
+        // Page 4: System
+        doc.addPage(); drawHeader("System Parameters & Statistics"); doc.setFontSize(13); doc.text("3. System Configuration", 20, 45);
+        drawPdfTable(doc, ['Parameter', 'Value', 'Unit'], [
+            ['Wafer Diameter', fmt6(p.waferDia), u],
+            ['Edge Clearance', fmt6(p.clearance), u],
+            ['Flat Height', fmt6(p.flatHeight), u],
+            ['Grid Offset X', fmt6(p.offsetX), u],
+            ['Grid Offset Y', fmt6(p.offsetY), u],
+        ], 20, 55, [60, 55, 55], { rowH: 10, fontSz: 10 });
+
+        const waferArea = Math.PI * Math.pow(radius, 2);
+        const totalDieArea = currentData.diesCount * (p.dieX * p.dieY);
+        const mfu = (shotX * shotY) / (26 * 33);
+        doc.setFontSize(13); doc.text("4. Area & Utilization Analysis", 20, 120);
+        drawPdfTable(doc, ['Metric', 'Value', 'Unit'], [
+            ['Total Gross Dies', String(currentData.diesCount), 'dies'],
+            ['Full Cells', String(currentData.fullCells), 'cells'],
+            ['Partial Cells', String(currentData.partialCells), 'cells'],
+            ['Wafer Area', waferArea.toFixed(6), u + '²'],
+            ['Effective Die Area', totalDieArea.toFixed(6), u + '²'],
+            ['Area Utilization', ((totalDieArea / waferArea) * 100).toFixed(6), '%'],
+            ['MFU (Shot/26×33)', (mfu * 100).toFixed(6), '%'],
+        ], 20, 130, [60, 55, 55], { rowH: 10, fontSz: 10 });
+        doc.save('Wafer_Map_Vector_Report.pdf');
+    }
+
+    function exportCSV() {
+        const p = getParams(); let csv = "Parameter,Value,Unit\n";
+        const u = unitLabel();
+        csv += `dieX,${fromInternal(p.dieX).toFixed(6)},${u}\n`;
+        csv += `dieY,${fromInternal(p.dieY).toFixed(6)},${u}\n`;
+        csv += `scribeX,${fromInternal(p.scribeX).toFixed(6)},${u}\n`;
+        csv += `scribeY,${fromInternal(p.scribeY).toFixed(6)},${u}\n`;
+        csv += `overlapX,${fromInternal(p.overlapX).toFixed(6)},${u}\n`;
+        csv += `overlapY,${fromInternal(p.overlapY).toFixed(6)},${u}\n`;
+        csv += `arrayX,${p.arrayX},count\n`;
+        csv += `arrayY,${p.arrayY},count\n`;
+        csv += `waferDia,${fromInternal(p.waferDia).toFixed(6)},${u}\n`;
+        csv += `clearance,${fromInternal(p.clearance).toFixed(6)},${u}\n`;
+        csv += `flatHeight,${fromInternal(p.flatHeight).toFixed(6)},${u}\n`;
+        csv += `offsetX,${fromInternal(p.offsetX).toFixed(6)},${u}\n`;
+        csv += `offsetY,${fromInternal(p.offsetY).toFixed(6)},${u}\n`;
+        const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = "wafer_config.csv"; a.click();
+    }
+
+    function importCSV(e) {
+        if (!e.target.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const mapKeys = { dieX: 'die_x', dieY: 'die_y', scribeX: 'scribe_x', scribeY: 'scribe_y', overlapX: 'overlap_x', overlapY: 'overlap_y', arrayX: 'array_x', arrayY: 'array_y', waferDia: 'wafer_dia', clearance: 'clearance', flatHeight: 'flat_height', offsetX: 'offset_x', offsetY: 'offset_y' };
+            ev.target.result.split('\n').forEach(row => {
+                const parts = row.split(',');
+                const k = parts[0], v = parts[1];
+                if (k && v && mapKeys[k]) document.getElementById(mapKeys[k]).value = parseFloat(v);
+            });
+            triggerUpdate();
+        };
+        reader.readAsText(e.target.files[0]);
+    }
+
+    function switchTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+        document.getElementById('canvasContainer').classList.toggle('active', tab === 'wafer');
+        document.getElementById('annotationContainer').classList.toggle('active', tab === 'annotation');
+        tab === 'wafer' ? resizeCanvas() : resizeAnnotationCanvas();
+    }
+
+    // === ANNOTATION CANVAS ===
+    const annoCanvas = document.getElementById('annotationCanvas');
+    const annoCtx = annoCanvas.getContext('2d');
+    let annoCssW = 0, annoCssH = 0, annoTransform = { x: 0, y: 0, scale: 1 }, annoDragging = false, annoDragStart = { x: 0, y: 0 };
+
+    function resetAnnotationView() { annoTransform = { x: 0, y: 0, scale: 1 }; renderAnnotation(); }
+    function resetLabelPositions() { labelOffsets = {}; renderAnnotation(); }
+    function toggleLabels() { showLabels = !showLabels; document.getElementById('toggleLabelsBtn').innerText = showLabels ? 'Hide Labels' : 'Show Labels'; renderAnnotation(); }
+
+    function resizeAnnotationCanvas() {
+        const rect = annoCanvas.parentElement.getBoundingClientRect();
+        annoCssW = rect.width; annoCssH = rect.height;
+        annoCanvas.width = rect.width * dpr; annoCanvas.height = rect.height * dpr;
+        annoCanvas.style.width = rect.width + 'px'; annoCanvas.style.height = rect.height + 'px';
+        renderAnnotation();
+    }
+
+    function renderAnnotation() {
+        const p = getParams(); const actx = annoCtx; const w = annoCanvas.width, h = annoCanvas.height;
+        actx.clearRect(0, 0, w, h); if (annoCssW === 0) return;
+        actx.save(); actx.scale(dpr, dpr);
+        actx.translate(annoCssW / 2 + annoTransform.x, annoCssH / 2 + annoTransform.y);
+        const annoScale = annoTransform.scale; actx.scale(annoScale, annoScale);
+        labelBounds = {};
+
+        const dieW = p.dieX, dieH = p.dieY, scribeW = p.scribeX, scribeH = p.scribeY;
+        const arrayW = p.arrayX, arrayH = p.arrayY, overlapW = p.overlapX, overlapH = p.overlapY;
+        const shotW = (dieW + scribeW) * arrayW + overlapW;
+        const shotH = (dieH + scribeH) * arrayH + overlapH;
+        const stepW = shotW - overlapW;
+        const stepH = shotH - overlapH;
+        const edgeSL_W = (scribeW + overlapW) / 2, edgeSL_H = (scribeH + overlapH) / 2;
+
+        const shots = [{ vx: 0, vy: 0 }, { vx: stepW, vy: 0 }, { vx: 0, vy: stepH }];
+        const MARGIN = 160, totalVW = shotW + stepW + MARGIN * 2, totalVH = shotH + stepH + MARGIN * 2;
+        const fitScale = Math.min((annoCssW * 0.80) / totalVW, (annoCssH * 0.80) / totalVH);
+        const sx = v => v * fitScale, sy = v => v * fitScale;
+        const originX = -(sx(totalVW) / 2) + sx(MARGIN), originY = -(sy(totalVH) / 2) + sy(MARGIN);
+        const COL = { scribe: '#dc2626', shot: '#2563eb', step: '#7c3aed', overlap: '#ea580c' };
+        const alw = d => Math.max(0.3, d) / annoScale;
+
+        function drawDimLine(x1, y1, x2, y2, label, color, offset, id, rotateLabel = false) {
+            const dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx*dx + dy*dy);
+            if (len < 0.1) return;
+            const nx = -dy / len, ny = dx / len, o = offset;
+            const ax1 = x1 + nx * o, ay1 = y1 + ny * o, ax2 = x2 + nx * o, ay2 = y2 + ny * o;
+            const tick = 6 / annoScale;
+            actx.strokeStyle = color; actx.lineWidth = alw(1.0); actx.setLineDash([4 / annoScale, 3 / annoScale]);
+            actx.beginPath(); actx.moveTo(x1 + nx*tick, y1 + ny*tick); actx.lineTo(ax1, ay1); actx.lineTo(ax2, ay2);
+            actx.moveTo(ax2, ay2); actx.lineTo(x2 + nx*tick, y2 + ny*tick); actx.stroke(); actx.setLineDash([]);
+            const arrowLen = 6 / annoScale;
+            [[ax1, ay1, x1, y1], [ax2, ay2, x2, y2]].forEach(([px, py, tx, ty]) => {
+                const ang = Math.atan2(ty - py, tx - px); actx.fillStyle = color; actx.beginPath(); actx.moveTo(px, py);
+                actx.lineTo(px - arrowLen*Math.cos(ang - 0.5), py - arrowLen*Math.sin(ang - 0.5));
+                actx.lineTo(px - arrowLen*Math.cos(ang + 0.5), py - arrowLen*Math.sin(ang + 0.5)); actx.closePath(); actx.fill();
+            });
+            if (showLabels && id) {
+                const fontSize = Math.max(3, 3.5 / annoScale); actx.font = `bold ${fontSize}px system-ui`;
+                const tm = actx.measureText(label), tw = tm.width + 8 / annoScale, th = fontSize + 6 / annoScale;
+                const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
+                const off = labelOffsets[id] || { x: 0, y: 0 };
+                const drawLabelX = midX + nx * o + off.x, drawLabelY = midY + ny * o + off.y;
+                actx.save(); actx.translate(drawLabelX, drawLabelY); if (rotateLabel) actx.rotate(-Math.PI / 2);
+                actx.fillStyle = 'rgba(255,255,255,0.95)'; actx.fillRect(-tw/2, -th/2, tw, th);
+                actx.strokeStyle = color; actx.lineWidth = alw(0.8); actx.strokeRect(-tw/2, -th/2, tw, th);
+                actx.fillStyle = color; actx.textAlign = 'center'; actx.textBaseline = 'middle'; actx.fillText(label, 0, 0); actx.restore();
+                labelBounds[id] = rotateLabel ? { x: drawLabelX - th/2, y: drawLabelY - tw/2, w: th, h: tw } : { x: drawLabelX - tw/2, y: drawLabelY - th/2, w: tw, h: th };
+            }
+        }
+
+        shots.forEach(s => {
+            const sx0 = originX + sx(s.vx), sy0 = originY + sy(s.vy), sw = sx(shotW), sh = sy(shotH);
+            actx.fillStyle = 'rgba(248, 250, 252, 0.6)'; actx.fillRect(sx0, sy0, sw, sh);
+            actx.strokeStyle = 'rgba(37, 99, 235, 0.5)'; actx.lineWidth = alw(1.5); actx.setLineDash([8 / annoScale, 4 / annoScale]);
+            actx.strokeRect(sx0, sy0, sw, sh); actx.setLineDash([]);
+            const dieOffsetX = sx(edgeSL_W), dieOffsetY = sy(edgeSL_H);
+            for (let di = 0; di < arrayW; di++) {
+                for (let dj = 0; dj < arrayH; dj++) {
+                    const dx = sx0 + dieOffsetX + sx(di * (dieW + scribeW)), dy = sy0 + dieOffsetY + sy(dj * (dieH + scribeH));
+                    actx.fillStyle = 'rgba(134, 239, 172, 0.5)'; actx.fillRect(dx, dy, sx(dieW), sy(dieH));
+                    actx.strokeStyle = '#16a34a'; actx.lineWidth = alw(0.7); actx.strokeRect(dx, dy, sx(dieW), sy(dieH));
+                }
+            }
+        });
+
+        if (arrayW > 1) {
+            const hsx0 = originX + sx(shots[0].vx), hsy0 = originY + sy(shots[0].vy), hdxOff = sx(edgeSL_W);
+            for (let di = 0; di < arrayW - 1; di++) {
+                const sX1 = hsx0 + hdxOff + sx((di + 1) * dieW + di * scribeW);
+                actx.fillStyle = 'rgba(220, 38, 38, 0.12)'; actx.fillRect(sX1, hsy0, sx(scribeW), sy(shotH));
+            }
+        }
+        if (arrayH > 1) {
+            const vsx0 = originX + sx(shots[0].vx), vsy0 = originY + sy(shots[0].vy), vdyOff = sy(edgeSL_H);
+            for (let dj = 0; dj < arrayH - 1; dj++) {
+                const sY1 = vsy0 + vdyOff + sy((dj + 1) * dieH + dj * scribeH);
+                actx.fillStyle = 'rgba(220, 38, 38, 0.12)'; actx.fillRect(vsx0, sY1, sx(shotW), sy(scribeH));
+            }
+        }
+
+        if (arrayW > 1) drawDimLine(originX + sx(edgeSL_W) + sx(dieW), originY, originX + sx(edgeSL_W) + sx(dieW) + sx(scribeW), originY, `Int. Scribe X = ${scribeW.toFixed(3)}`, COL.scribe, -35/annoScale, 'intScribeX', false);
+        if (arrayH > 1) drawDimLine(originX + sx(shotW), originY + sy(edgeSL_H) + sy(dieH), originX + sx(shotW), originY + sy(edgeSL_H) + sy(dieH) + sy(scribeH), `Int. Scribe Y = ${scribeH.toFixed(3)}`, COL.scribe, -35/annoScale, 'intScribeY', true);
+        drawDimLine(originX + sx(shotW) - sx(edgeSL_W), originY, originX + sx(shotW) - sx(edgeSL_W) + sx(scribeW), originY, `Ext. Scribe X = ${scribeW.toFixed(3)}`, COL.scribe, -65/annoScale, 'extScribeX', false);
+        drawDimLine(originX + sx(shotW), originY + sy(shotH) - sy(edgeSL_H), originX + sx(shotW), originY + sy(shotH) - sy(edgeSL_H) + sy(scribeH), `Ext. Scribe Y = ${scribeH.toFixed(3)}`, COL.scribe, -65/annoScale, 'extScribeY', true);
+        drawDimLine(originX, originY + sy(shotH), originX + sx(shotW), originY + sy(shotH), `Shot X = ${shotW.toFixed(3)}`, COL.shot, 40/annoScale, 'shotSizeX', false);
+        drawDimLine(originX, originY, originX, originY + sy(shotH), `Shot Y = ${shotH.toFixed(3)}`, COL.shot, 40/annoScale, 'shotSizeY', true);
+        drawDimLine(originX, originY, originX + sx(stepW), originY, `Step X = ${stepW.toFixed(3)}`, COL.step, -80/annoScale, 'stepX', false);
+        drawDimLine(originX, originY, originX, originY + sy(stepH), `Step Y = ${stepH.toFixed(3)}`, COL.step, 80/annoScale, 'stepY', true);
+        if (overlapW > 0.0001) drawDimLine(originX + sx(stepW), originY + sy(shotH), originX + sx(shotW), originY + sy(shotH), `Overlap X = ${overlapW.toFixed(3)}`, COL.overlap, 25/annoScale, 'overlapX', false);
+        if (overlapH > 0.0001) drawDimLine(originX + sx(shotW), originY + sy(stepH), originX + sx(shotW), originY + sy(shotH), `Overlap Y = ${overlapH.toFixed(3)}`, COL.overlap, -25/annoScale, 'overlapY', true);
+
+        const legendX = -sx(totalVW) / 2 + sx(MARGIN), legendY = -sy(totalVH) / 2 + 5;
+        const legendFontSize = Math.max(8, 10 / annoScale), itemH = 16 / annoScale;
+        actx.font = `${legendFontSize}px system-ui`;
+        [{ label: 'Internal Scribe', color: COL.scribe }, { label: 'Shot Size', color: COL.shot }, { label: 'Step Size', color: COL.step }, { label: 'Overlap', color: COL.overlap }].forEach((item, i) => {
+            const ly = legendY + i * itemH;
+            actx.fillStyle = item.color; actx.fillRect(legendX, ly, 10/annoScale, 10/annoScale);
+            actx.fillStyle = '#1e293b'; actx.fillText(item.label, legendX + 16/annoScale, ly + 9/annoScale);
+        });
+        actx.restore();
+    }
+
+    annoCanvas.addEventListener('mousedown', e => {
+        if (activeTab !== 'annotation') return;
+        const rect = annoCanvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left - annoCssW / 2 - annoTransform.x) / annoTransform.scale;
+        const my = (e.clientY - rect.top - annoCssH / 2 - annoTransform.y) / annoTransform.scale;
+        for (const id of Object.keys(labelBounds).reverse()) {
+            const b = labelBounds[id];
+            if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                activeDragLabel = id; dragLabelStart = { x: e.clientX, y: e.clientY }; annoCanvas.style.cursor = 'move'; return;
+            }
+        }
+        annoDragging = true; annoDragStart = { x: e.clientX - annoTransform.x, y: e.clientY - annoTransform.y }; annoCanvas.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mouseup', () => { if (activeDragLabel) { activeDragLabel = null; annoCanvas.style.cursor = 'grab'; } if (annoDragging) { annoDragging = false; annoCanvas.style.cursor = 'grab'; } });
+    annoCanvas.addEventListener('mousemove', e => {
+        if (activeTab !== 'annotation') return;
+        if (activeDragLabel) {
+            const dx = (e.clientX - dragLabelStart.x) / annoTransform.scale, dy = (e.clientY - dragLabelStart.y) / annoTransform.scale;
+            if (!labelOffsets[activeDragLabel]) labelOffsets[activeDragLabel] = { x: 0, y: 0 };
+            labelOffsets[activeDragLabel].x += dx; labelOffsets[activeDragLabel].y += dy;
+            dragLabelStart = { x: e.clientX, y: e.clientY }; requestAnimationFrame(renderAnnotation); return;
+        }
+        if (annoDragging) { annoTransform.x = e.clientX - annoDragStart.x; annoTransform.y = e.clientY - annoDragStart.y; requestAnimationFrame(renderAnnotation); }
+        else {
+            const rect = annoCanvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left - annoCssW / 2 - annoTransform.x) / annoTransform.scale;
+            const my = (e.clientY - rect.top - annoCssH / 2 - annoTransform.y) / annoTransform.scale;
+            annoCanvas.style.cursor = Object.keys(labelBounds).some(id => { const b = labelBounds[id]; return mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h; }) ? 'move' : 'grab';
+        }
+    });
+    annoCanvas.addEventListener('wheel', e => {
+        if (activeTab !== 'annotation') return; e.preventDefault();
+        const zf = Math.exp((e.deltaY < 0 ? 1 : -1) * 0.08);
+        const rect = annoCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left - annoCssW / 2, my = e.clientY - rect.top - annoCssH / 2;
+        annoTransform.x = mx - (mx - annoTransform.x) * zf; annoTransform.y = my - (my - annoTransform.y) * zf;
+        annoTransform.scale = Math.max(0.1, Math.min(annoTransform.scale * zf, 40)); requestAnimationFrame(renderAnnotation);
+    });
+    annoCanvas.addEventListener('mouseleave', () => { annoDragging = false; activeDragLabel = null; annoCanvas.style.cursor = 'grab'; });
+    new ResizeObserver(() => { if (activeTab === 'annotation') resizeAnnotationCanvas(); }).observe(document.getElementById('annotationContainer'));
+
+    window.onload = () => { updateUnitLabels(); resizeCanvas(); triggerUpdate(); };
+</script>
+</body>
+</html>
