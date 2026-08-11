@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Wafer Map Generator V3</title>
+    <title>Professional Wafer Map Generator V3.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
@@ -46,6 +46,14 @@
         .utilization-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
         .util-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
         .util-row .util-val { font-weight: bold; color: #16a34a; font-size: 0.9rem; }
+        .sweep-progress { font-size: 0.75rem; color: var(--primary); margin-top: 4px; display: none; font-weight: 600; }
+        .layout-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .layout-toggle { display: flex; align-items: center; gap: 8px; }
+        .layout-toggle input { width: auto; margin: 0; accent-color: var(--primary); }
+        .layout-toggle label { margin: 0; font-size: 0.8rem; color: var(--primary); text-transform: none; letter-spacing: 0; }
+        .layout-info { font-size: 0.75rem; color: var(--text-muted); background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; line-height: 1.5; }
+        .layout-info.warn { color: #dc2626; background: #fef2f2; border-color: #fecaca; }
+        .unit-suffix { text-transform: none; }
     </style>
 </head>
 <body>
@@ -60,27 +68,50 @@
         </select>
     </div>
     <div class="input-row">
-        <div class="input-group"><label class="unit-label">Die Size X (mm)</label><input type="number" id="die_x" value="24" step="0.001" onchange="triggerUpdate()"></div>
-        <div class="input-group"><label class="unit-label">Die Size Y (mm)</label><input type="number" id="die_y" value="31" step="0.001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Die Size X <span class="unit-suffix">(mm)</span></label><input type="number" id="die_x" value="24" step="0.000001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Die Size Y <span class="unit-suffix">(mm)</span></label><input type="number" id="die_y" value="31" step="0.000001" onchange="triggerUpdate()"></div>
     </div>
     <div class="input-row">
-        <div class="input-group"><label class="unit-label">Scribe X (mm)</label><input type="number" id="scribe_x" value="2" step="0.001" onchange="onScribeChange()"></div>
-        <div class="input-group"><label class="unit-label">Scribe Y (mm)</label><input type="number" id="scribe_y" value="2" step="0.001" onchange="onScribeChange()"></div>
+        <div class="input-group"><label class="unit-label">Scribe X <span class="unit-suffix">(mm)</span></label><input type="number" id="scribe_x" value="2" step="0.000001" onchange="onScribeChange()"></div>
+        <div class="input-group"><label class="unit-label">Scribe Y <span class="unit-suffix">(mm)</span></label><input type="number" id="scribe_y" value="2" step="0.000001" onchange="onScribeChange()"></div>
     </div>
     <div class="input-row">
-        <div class="input-group"><label class="unit-label">Overlap X (mm)</label><input type="number" id="overlap_x" value="1" step="0.001" onchange="triggerUpdate()"></div>
-        <div class="input-group"><label class="unit-label">Overlap Y (mm)</label><input type="number" id="overlap_y" value="1" step="0.001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Overlap X <span class="unit-suffix">(mm)</span></label><input type="number" id="overlap_x" value="1" step="0.000001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Overlap Y <span class="unit-suffix">(mm)</span></label><input type="number" id="overlap_y" value="1" step="0.000001" onchange="triggerUpdate()"></div>
     </div>
     <div class="input-row">
         <div class="input-group"><label>Die Array X</label><input type="number" id="array_x" value="1" step="1" onchange="triggerUpdate()"></div>
         <div class="input-group"><label>Die Array Y</label><input type="number" id="array_y" value="1" step="1" onchange="triggerUpdate()"></div>
     </div>
-    <div class="input-group"><label class="unit-label">Wafer Diameter (mm)</label><input type="number" id="wafer_dia" value="300" step="0.001" onchange="triggerUpdate()"></div>
-    <div class="input-group"><label class="unit-label">Edge Clearance (mm)</label><input type="number" id="clearance" value="5" step="0.001" onchange="triggerUpdate()"></div>
-    <div class="input-group"><label class="unit-label">Flat Height (mm)</label><input type="number" id="flat_height" value="0" step="0.001" min="0" onchange="triggerUpdate()"></div>
+    <div class="input-group"><label class="unit-label">Wafer Diameter <span class="unit-suffix">(mm)</span></label><input type="number" id="wafer_dia" value="300" step="0.000001" onchange="triggerUpdate()"></div>
+    <div class="input-group"><label class="unit-label">Edge Clearance <span class="unit-suffix">(mm)</span></label><input type="number" id="clearance" value="5" step="0.000001" onchange="triggerUpdate()"></div>
+    <div class="input-group"><label class="unit-label">Flat Height <span class="unit-suffix">(mm)</span></label><input type="number" id="flat_height" value="0" step="0.000001" min="0" onchange="triggerUpdate()"></div>
     <div class="input-row">
-        <div class="input-group"><label class="unit-label">Grid Offset X (mm)</label><input type="number" id="offset_x" value="0" step="0.001" onchange="triggerUpdate()"></div>
-        <div class="input-group"><label class="unit-label">Grid Offset Y (mm)</label><input type="number" id="offset_y" value="0" step="0.001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Grid Offset X <span class="unit-suffix">(mm)</span></label><input type="number" id="offset_x" value="0" step="0.000001" onchange="triggerUpdate()"></div>
+        <div class="input-group"><label class="unit-label">Grid Offset Y <span class="unit-suffix">(mm)</span></label><input type="number" id="offset_y" value="0" step="0.000001" onchange="triggerUpdate()"></div>
+    </div>
+
+    <h2>Reticle Layout</h2>
+    <div class="layout-box">
+        <div class="input-row layout-toggle">
+            <input type="checkbox" id="layout_enabled" onchange="toggleLayout()">
+            <label for="layout_enabled">Enable Eccentric Layout</label>
+        </div>
+        <div class="input-row layout-toggle">
+            <input type="checkbox" id="show_shot_outlines" onchange="toggleShotOutlines()">
+            <label for="show_shot_outlines">Show Shot Outlines</label>
+        </div>
+        <div id="layout_panel" style="display:none;">
+            <div class="input-row">
+                <div class="input-group"><label class="unit-label">Outer Left <span class="unit-suffix">(mm)</span></label><input type="number" id="outer_l" value="1.5" step="0.000001" min="0" onchange="triggerUpdate()"></div>
+                <div class="input-group"><label class="unit-label">Outer Right <span class="unit-suffix">(mm)</span></label><input type="number" id="outer_r" value="1.5" step="0.000001" min="0" onchange="triggerUpdate()"></div>
+            </div>
+            <div class="input-row">
+                <div class="input-group"><label class="unit-label">Outer Top <span class="unit-suffix">(mm)</span></label><input type="number" id="outer_t" value="1.5" step="0.000001" min="0" onchange="triggerUpdate()"></div>
+                <div class="input-group"><label class="unit-label">Outer Bottom <span class="unit-suffix">(mm)</span></label><input type="number" id="outer_b" value="1.5" step="0.000001" min="0" onchange="triggerUpdate()"></div>
+            </div>
+            <div id="layout_info" class="layout-info"></div>
+        </div>
     </div>
 
     <h2>Utilization</h2>
@@ -92,7 +123,11 @@
     </div>
 
     <h2>Optimization</h2>
-    <button onclick="sweepOffsets()" class="secondary" id="sweepBtn">Sweep Max Gross Die</button>
+    <div class="input-row">
+        <button onclick="sweepOffsets()" class="secondary" id="sweepBtn" style="flex:1;">Sweep Max Gross Die</button>
+        <button onclick="cancelSweep()" class="secondary" id="sweepCancelBtn" style="flex:1; display:none; background:#dc2626;">Cancel</button>
+    </div>
+    <div id="sweep_progress" class="sweep-progress"></div>
     <div id="sweep_ui" class="sweep-results">
         <label>Best Configurations Found:</label>
         <select id="sweep_selector" onchange="applySelectedSweep()"></select>
@@ -104,6 +139,7 @@
         <button onclick="document.getElementById('file_import').click()" class="secondary" style="flex:1;">Import CSV</button>
         <input type="file" id="file_import" style="display:none" accept=".csv" onchange="importCSV(event)">
     </div>
+    <button onclick="exportDieList()" class="secondary" style="background:#0891b2;">Export Die List</button>
     <button onclick="exportVectorPDF()" style="background: #16a34a;">Generate PDF Report</button>
 </div>
 
@@ -114,6 +150,7 @@
     </div>
     <div class="dashboard">
         <div class="stat-card"><div class="stat-value" id="stat_dies">0</div><div class="stat-label">Valid Gross Dies</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat_ugly">0</div><div class="stat-label">Ugly Dies</div></div>
         <div class="stat-card"><div class="stat-value" id="stat_full">0</div><div class="stat-label">Full Cells</div></div>
         <div class="stat-card"><div class="stat-value" id="stat_partial">0</div><div class="stat-label">Partial Cells</div></div>
     </div>
@@ -135,6 +172,9 @@
 </div>
 
 <script>
+    // =====================================================================
+    // 0. GLOBAL STATE — 所有跨函数共享状态集中于此
+    // =====================================================================
     let currentData = { diesCount: 0, fullCells: 0, partialCells: 0, cells: [], p: {} };
     let viewTransform = { x: 0, y: 0, scale: 1 };
     let isDragging = false, dragStart = { x: 0, y: 0 }, hoveredDie = null;
@@ -145,38 +185,73 @@
     let activeDragLabel = null, dragLabelStart = { x: 0, y: 0 };
     let currentUnit = 'mm';
 
+    // =====================================================================
+    // 1. UNIT SYSTEM — 内部计算恒为 mm，显示单位由 currentUnit 决定
+    // =====================================================================
     function toInternal(val) { return currentUnit === 'um' ? val / 1000 : val; }
     function fromInternal(val) { return currentUnit === 'um' ? val * 1000 : val; }
     function unitLabel() { return currentUnit === 'um' ? 'µm' : 'mm'; }
+    function decimals() { return currentUnit === 'um' ? 3 : 6; }
+    function fmt(val) { return fromInternal(val).toFixed(decimals()); }
+    function getInputStep() { return currentUnit === 'um' ? '0.001' : '0.000001'; }
+
+    // 所有带单位数值输入的 DOM id（用于 step 设置 / 单位切换 / 导入）
+    const UNIT_FIELDS = ['die_x','die_y','scribe_x','scribe_y','overlap_x','overlap_y','wafer_dia','clearance','flat_height','offset_x','offset_y','outer_l','outer_r','outer_t','outer_b'];
+
+    function updateInputSteps() {
+        const step = getInputStep();
+        UNIT_FIELDS.forEach(id => { document.getElementById(id).step = step; });
+    }
 
     function switchUnit() {
         const newUnit = document.getElementById('unit_select').value;
         if (newUnit === currentUnit) return;
-        const factor = (newUnit === 'um') ? 1000 : 0.001;
-        const fields = ['die_x','die_y','scribe_x','scribe_y','overlap_x','overlap_y','wafer_dia','clearance','flat_height','offset_x','offset_y'];
-        fields.forEach(id => {
-            const el = document.getElementById(id);
-            el.value = (parseFloat(el.value) * factor).toFixed(6);
+        const oldUnit = currentUnit;
+        // 先把旧单位显示值换算为内部 mm（此步与 currentUnit 无关）
+        const internal = UNIT_FIELDS.map(id => {
+            const val = parseFloat(document.getElementById(id).value);
+            return isNaN(val) ? 0 : (oldUnit === 'um' ? val / 1000 : val);
         });
+        // 切换单位后再按新单位格式化
         currentUnit = newUnit;
+        const d = decimals();
+        UNIT_FIELDS.forEach((id, i) => {
+            document.getElementById(id).value = fromInternal(internal[i]).toFixed(d);
+        });
         updateUnitLabels();
+        updateInputSteps();
         triggerUpdate();
     }
 
+    // 单位后缀 span，如 "Die Size X (mm)" 中的 (mm)。用子元素而非正则解析整段文本。
     function updateUnitLabels() {
         const u = unitLabel();
-        document.querySelectorAll('.unit-label').forEach(el => {
-            el.textContent = el.textContent.replace(/\(mm\)|\(µm\)/, `(${u})`);
-        });
+        document.querySelectorAll('.unit-suffix').forEach(el => { el.textContent = `(${u})`; });
     }
 
+    // =====================================================================
+    // 2. PARAMETER MODEL — 从 DOM 读取参数为内部 mm 单位对象 p
+    //    纯函数：getShotStep / getDieOffsets / getEffOuter
+    // =====================================================================
     function getParams() {
+        const layoutEnabled = document.getElementById('layout_enabled').checked;
         const scribeX = toInternal(parseFloat(document.getElementById('scribe_x').value));
         const scribeY = toInternal(parseFloat(document.getElementById('scribe_y').value));
         let overlapX = Math.max(0, Math.min(toInternal(parseFloat(document.getElementById('overlap_x').value)), scribeX));
         let overlapY = Math.max(0, Math.min(toInternal(parseFloat(document.getElementById('overlap_y').value)), scribeY));
-        document.getElementById('overlap_x').value = fromInternal(overlapX).toFixed(6);
-        document.getElementById('overlap_y').value = fromInternal(overlapY).toFixed(6);
+
+        let outerL = 0, outerR = 0, outerT = 0, outerB = 0;
+        if (layoutEnabled) {
+            outerL = Math.max(0, toInternal(parseFloat(document.getElementById('outer_l').value) || 0));
+            outerR = Math.max(0, toInternal(parseFloat(document.getElementById('outer_r').value) || 0));
+            outerT = Math.max(0, toInternal(parseFloat(document.getElementById('outer_t').value) || 0));
+            outerB = Math.max(0, toInternal(parseFloat(document.getElementById('outer_b').value) || 0));
+            // 相邻 shot 的 die 不得重叠：步进方向有效切割道 = outerL+outerR-overlapX >= 0
+            if (outerL + outerR < overlapX) overlapX = outerL + outerR;
+            if (outerT + outerB < overlapY) overlapY = outerT + outerB;
+        }
+        document.getElementById('overlap_x').value = fromInternal(overlapX).toFixed(decimals());
+        document.getElementById('overlap_y').value = fromInternal(overlapY).toFixed(decimals());
         return {
             dieX: toInternal(parseFloat(document.getElementById('die_x').value)),
             dieY: toInternal(parseFloat(document.getElementById('die_y').value)),
@@ -188,6 +263,7 @@
             flatHeight: toInternal(parseFloat(document.getElementById('flat_height').value)),
             offsetX: toInternal(parseFloat(document.getElementById('offset_x').value)),
             offsetY: toInternal(parseFloat(document.getElementById('offset_y').value)),
+            layoutEnabled, outerL, outerR, outerT, outerB,
             unit: currentUnit
         };
     }
@@ -197,75 +273,137 @@
         const sy = toInternal(parseFloat(document.getElementById('scribe_y').value));
         let ox = toInternal(parseFloat(document.getElementById('overlap_x').value));
         let oy = toInternal(parseFloat(document.getElementById('overlap_y').value));
-        if (ox > sx) document.getElementById('overlap_x').value = fromInternal(sx).toFixed(6);
-        if (oy > sy) document.getElementById('overlap_y').value = fromInternal(sy).toFixed(6);
+        if (ox > sx) document.getElementById('overlap_x').value = fromInternal(sx).toFixed(decimals());
+        if (oy > sy) document.getElementById('overlap_y').value = fromInternal(sy).toFixed(decimals());
         triggerUpdate();
     }
 
     function getShotStep(p) {
-        const shotX = (p.dieX + p.scribeX) * p.arrayX + p.overlapX;
-        const shotY = (p.dieY + p.scribeY) * p.arrayY + p.overlapY;
+        let shotX, shotY;
+        if (p.layoutEnabled) {
+            // 偏心模式：shot 尺寸 = die 阵列净宽 + 两侧独立外切割道
+            shotX = (p.arrayX - 1) * (p.dieX + p.scribeX) + p.dieX + p.outerL + p.outerR;
+            shotY = (p.arrayY - 1) * (p.dieY + p.scribeY) + p.dieY + p.outerT + p.outerB;
+        } else {
+            // 对称模式：隐含左=右=(scribe+overlap)/2
+            shotX = (p.dieX + p.scribeX) * p.arrayX + p.overlapX;
+            shotY = (p.dieY + p.scribeY) * p.arrayY + p.overlapY;
+        }
         const stepX = shotX - p.overlapX;
         const stepY = shotY - p.overlapY;
         return { shotX, shotY, stepX, stepY };
     }
 
+    // 每个 die 相对 shot 中心的偏移 [{x, y, di, dj}]，对称/偏心统一入口。
+    // 对称时 outer 缺省等价于现有中心对称公式；偏心时用独立外切割道定位阵列。
+    function getDieOffsets(p) {
+        const offs = [];
+        const pitchX = p.dieX + p.scribeX, pitchY = p.dieY + p.scribeY;
+        const { shotX, shotY } = getShotStep(p);
+        for (let di = 0; di < p.arrayX; di++) {
+            for (let dj = 0; dj < p.arrayY; dj++) {
+                let x, y;
+                if (p.layoutEnabled) {
+                    x = p.outerL + p.dieX / 2 + di * pitchX - shotX / 2;
+                    // 数学坐标 y 向上为正：dj=0 是底部行，其外切割道由 outerB（Bottom）控制
+                    y = p.outerB + p.dieY / 2 + dj * pitchY - shotY / 2;
+                } else {
+                    x = (di - (p.arrayX - 1) / 2) * pitchX;
+                    y = (dj - (p.arrayY - 1) / 2) * pitchY;
+                }
+                offs.push({ x, y, di, dj });
+            }
+        }
+        return offs;
+    }
+
+    // 有效外切割道：偏心模式用用户设置值；对称模式退化为 (scribe+overlap)/2（网格/PDF/标注统一引用）
+    function getEffOuter(p) {
+        if (p.layoutEnabled) return { L: p.outerL, R: p.outerR, T: p.outerT, B: p.outerB };
+        return {
+            L: (p.scribeX + p.overlapX) / 2, R: (p.scribeX + p.overlapX) / 2,
+            T: (p.scribeY + p.overlapY) / 2, B: (p.scribeY + p.overlapY) / 2
+        };
+    }
+
+    // =====================================================================
+    // 3. CORE CALCULATION — wafermap 生成 / 利用率 / 扫描优化
+    // =====================================================================
+    // Cell type determined by die validity, not shot corners
     function calculateWaferMap(p) {
         const { shotX, shotY, stepX, stepY } = getShotStep(p);
         const radius = p.waferDia / 2;
         const effRadius = radius - p.clearance;
         const effRadiusSq = effRadius * effRadius;
-        const radiusSq = radius * radius;
         const flatY = -radius + p.flatHeight;
 
-        const maxCellsX = Math.ceil(radius * 2 / stepX) + 2;
-        const maxCellsY = Math.ceil(radius * 2 / stepY) + 2;
+        // Tighter bound: cell must be within wafer radius + half shot size
+        const maxCellsX = Math.ceil((radius + shotX / 2) / stepX) + 1;
+        const maxCellsY = Math.ceil((radius + shotY / 2) / stepY) + 1;
 
-        let cells = [], diesCount = 0, fullCount = 0, partialCount = 0;
+        let cells = [], diesCount = 0, fullCount = 0, partialCount = 0, uglyCount = 0;
+        const dieOffsets = getDieOffsets(p);
 
         for (let i = -maxCellsX; i <= maxCellsX; i++) {
             for (let j = -maxCellsY; j <= maxCellsY; j++) {
                 const cx = i * stepX + p.offsetX;
                 const cy = j * stepY + p.offsetY;
 
-                const cCorners = [
-                    {x: cx - shotX/2, y: cy - shotY/2}, {x: cx + shotX/2, y: cy - shotY/2},
-                    {x: cx - shotX/2, y: cy + shotY/2}, {x: cx + shotX/2, y: cy + shotY/2}
-                ];
-
-                const allInCircle = cCorners.every(c => (c.x*c.x + c.y*c.y) <= effRadiusSq);
-                const allAboveFlat = cCorners.every(c => c.y >= flatY);
-                const anyInWafer = cCorners.some(c => (c.x*c.x + c.y*c.y) <= radiusSq && c.y >= flatY);
-
-                let cellType = 'none';
-                if (allInCircle && allAboveFlat) { cellType = 'full'; fullCount++; }
-                else if (anyInWafer) { cellType = 'partial'; partialCount++; }
-                if (cellType === 'none') continue;
+                // Shot 是否接触晶圆（物理圆盘）：AABB 与圆盘相交判定。
+                // 未接触的 shot 完全排除（既无 gross 也无 ugly）。
+                const nearX = Math.max(Math.abs(cx) - shotX/2, 0);
+                const nearY = Math.max(Math.abs(cy) - shotY/2, 0);
+                if (nearX*nearX + nearY*nearY > radius*radius) continue;
 
                 let cellDies = [];
-                const finalDieX = p.dieX + p.scribeX;
-                const finalDieY = p.dieY + p.scribeY;
-                for (let di = 0; di < p.arrayX; di++) {
-                    for (let dj = 0; dj < p.arrayY; dj++) {
-                        const dx = cx + (di - (p.arrayX - 1) / 2) * finalDieX;
-                        const dy = cy + (dj - (p.arrayY - 1) / 2) * finalDieY;
-                        const dCorners = [
-                            {x: dx - p.dieX/2 - p.scribeX/2, y: dy - p.dieY/2 - p.scribeY/2},
-                            {x: dx + p.dieX/2 + p.scribeX/2, y: dy - p.dieY/2 - p.scribeY/2},
-                            {x: dx - p.dieX/2 - p.scribeX/2, y: dy + p.dieY/2 + p.scribeY/2},
-                            {x: dx + p.dieX/2 + p.scribeX/2, y: dy + p.dieY/2 + p.scribeY/2}
-                        ];
-                        const dieInCircle = dCorners.every(c => (c.x*c.x + c.y*c.y) <= effRadiusSq);
-                        const dieAboveFlat = dCorners.every(c => c.y >= flatY);
-                        const dieValid = dieInCircle && dieAboveFlat;
-                        if (dieValid) diesCount++;
-                        cellDies.push({ x: dx, y: dy, valid: dieValid, logicIdx: `${di},${dj}` });
+                let anyDieValid = false;
+                let allDiesValid = true;
+                let cellUgly = 0;
+
+                for (const off of dieOffsets) {
+                    const dx = cx + off.x;
+                    const dy = cy + off.y;
+
+                    // Die corners include scribe lines (the full "field" of this die)
+                    const halfW = p.dieX/2 + p.scribeX/2;
+                    const halfH = p.dieY/2 + p.scribeY/2;
+                    const dCorners = [
+                        {x: dx - halfW, y: dy - halfH},
+                        {x: dx + halfW, y: dy - halfH},
+                        {x: dx - halfW, y: dy + halfH},
+                        {x: dx + halfW, y: dy + halfH}
+                    ];
+
+                    const dieInCircle = dCorners.every(c => (c.x*c.x + c.y*c.y) <= effRadiusSq);
+                    const dieAboveFlat = p.flatHeight <= 0 || dCorners.every(c => c.y >= flatY);
+                    const dieValid = dieInCircle && dieAboveFlat;
+
+                    if (dieValid) {
+                        diesCount++;
+                        anyDieValid = true;
+                    } else {
+                        allDiesValid = false;
+                        cellUgly++;
                     }
+                    cellDies.push({ x: dx, y: dy, valid: dieValid, di: off.di, dj: off.dj });
                 }
-                cells.push({ x: cx, y: cy, type: cellType, dies: cellDies });
+
+                // 该 shot 接触 wafer（已通过 AABB 判定）：其中所有无效 die 均计入 ugly，
+                // 即使 shot 内没有任何 gross die（shot 会被曝光但无有效产出）。
+                uglyCount += cellUgly;
+
+                // [FIX 1] Cell type based on die validity, not shot boundary
+                // "full" = all dies in this cell are valid
+                // "partial" = some dies valid, some not (typically at wafer edge)
+                // "none"  = no valid dies，但该 shot 仍接触 wafer，仅含 ugly die
+                let cellType = anyDieValid ? (allDiesValid ? 'full' : 'partial') : 'none';
+                if (cellType === 'full') fullCount++;
+                else if (cellType === 'partial') partialCount++;
+
+                cells.push({ x: cx, y: cy, si: i, sj: j, type: cellType, dies: cellDies });
             }
         }
-        return { cells, diesCount, fullCells: fullCount, partialCells: partialCount, p };
+        return { cells, diesCount, fullCells: fullCount, partialCells: partialCount, uglyCount, p };
     }
 
     function updateUtilization() {
@@ -275,78 +413,218 @@
         const waferArea = Math.PI * Math.pow(p.waferDia / 2, 2);
         const totalDieArea = currentData.diesCount * (p.dieX * p.dieY);
         const areaUtil = waferArea > 0 ? totalDieArea / waferArea : 0;
+        const d = decimals();
         document.getElementById('util_mfu').textContent = (mfu * 100).toFixed(2) + '%';
         document.getElementById('util_area').textContent = (areaUtil * 100).toFixed(2) + '%';
-        document.getElementById('util_shot').textContent = `${fromInternal(shotX).toFixed(3)} × ${fromInternal(shotY).toFixed(3)} ${unitLabel()}`;
-        document.getElementById('util_step').textContent = `${fromInternal(stepX).toFixed(3)} × ${fromInternal(stepY).toFixed(3)} ${unitLabel()}`;
+        document.getElementById('util_shot').textContent = `${fromInternal(shotX).toFixed(d)} × ${fromInternal(shotY).toFixed(d)} ${unitLabel()}`;
+        document.getElementById('util_step').textContent = `${fromInternal(stepX).toFixed(d)} × ${fromInternal(stepY).toFixed(d)} ${unitLabel()}`;
     }
 
-    // === SWEEP: coarse step + fine step = 10um (0.01mm) ===
-    function sweepOffsets() {
+    // ========== [FIX 2] 4-Level Progressive Sweep ==========
+    // 异步分块执行（定期让出主线程）+ Cancel 取消 + 时间预算兜底。
+    // 时间预算：小 die / 大晶圆时单次求值很贵，若总耗时超预算则用当前最优结果提前收尾，杜绝卡死。
+    let sweepCancelled = false;
+
+    function cancelSweep() { sweepCancelled = true; }
+
+    async function sweepOffsets() {
         const btn = document.getElementById('sweepBtn');
+        const cancelBtn = document.getElementById('sweepCancelBtn');
+        const progress = document.getElementById('sweep_progress');
         const originalText = btn.innerText;
         btn.innerText = 'Sweeping...'; btn.disabled = true;
+        cancelBtn.style.display = 'inline-block';
+        progress.style.display = 'block';
+        sweepCancelled = false;
 
-        setTimeout(() => {
-            const p = getParams();
-            const { stepX, stepY } = getShotStep(p);
+        const BUDGET_MS = 6000;
+        const startTime = Date.now();
+        const nextFrame = () => new Promise(res => setTimeout(res, 0));
+        const p = getParams();
+        const { stepX, stepY } = getShotStep(p);
 
-            let maxDies = 0, coarseBests = [];
-            // Coarse: ~5% of step
-            const coarseStepX = Math.max(0.01, stepX / 20);
-            const coarseStepY = Math.max(0.01, stepY / 20);
+        function evalOffset(ox, oy) {
+            return calculateWaferMap({...p, offsetX: ox, offsetY: oy}).diesCount;
+        }
 
-            for (let ox = 0; ox < stepX; ox += coarseStepX) {
-                for (let oy = 0; oy < stepY; oy += coarseStepY) {
-                    let res = calculateWaferMap({...p, offsetX: ox, offsetY: oy});
-                    if (res.diesCount > maxDies) { maxDies = res.diesCount; coarseBests = [{ox, oy, count: res.diesCount}]; }
-                    else if (res.diesCount === maxDies && maxDies > 0) { coarseBests.push({ox, oy, count: res.diesCount}); }
-                }
-            }
-
-            // Fine step: 10um = 0.01mm
-            const fineStep = 0.01;
-            const searchRadius = Math.max(coarseStepX, coarseStepY);
-            let finalBests = [], finalMaxDies = maxDies, searchedCenters = [];
-
-            for (let cb of coarseBests) {
-                let isDuplicate = searchedCenters.some(sc => Math.abs(sc.ox - cb.ox) < searchRadius && Math.abs(sc.oy - cb.oy) < searchRadius);
-                if (isDuplicate) continue;
-                searchedCenters.push(cb);
-                const startX = Math.max(0, cb.ox - searchRadius), endX = Math.min(stepX, cb.ox + searchRadius);
-                const startY = Math.max(0, cb.oy - searchRadius), endY = Math.min(stepY, cb.oy + searchRadius);
-                for (let ox = startX; ox <= endX; ox += fineStep) {
-                    for (let oy = startY; oy <= endY; oy += fineStep) {
-                        let res = calculateWaferMap({...p, offsetX: ox, offsetY: oy});
-                        if (res.diesCount > finalMaxDies) { finalMaxDies = res.diesCount; finalBests = [{ox, oy, count: res.diesCount}]; }
-                        else if (res.diesCount === finalMaxDies && finalMaxDies > 0 && finalBests.length < 20) { finalBests.push({ox, oy, count: res.diesCount}); }
+        // 分块网格搜索：每约 40ms 让出主线程、响应取消，并受时间预算约束
+        async function gridSearch(startX, endX, startY, endY, step, currentMax, currentBests, maxBests) {
+            let localMax = currentMax, localBests = [...currentBests], lastYield = Date.now();
+            for (let ox = startX; ox <= endX + step * 0.01; ox += step) {
+                for (let oy = startY; oy <= endY + step * 0.01; oy += step) {
+                    if (sweepCancelled) return { cancelled: true, max: localMax, bests: localBests };
+                    const clampedOx = Math.max(0, Math.min(stepX, ox));
+                    const clampedOy = Math.max(0, Math.min(stepY, oy));
+                    const count = evalOffset(clampedOx, clampedOy);
+                    if (count > localMax) {
+                        localMax = count;
+                        localBests = [{ox: clampedOx, oy: clampedOy, count}];
+                    } else if (count === localMax && count > 0 && localBests.length < maxBests) {
+                        // Deduplicate: skip if too close to an existing best
+                        const isDup = localBests.some(b =>
+                            Math.abs(b.ox - clampedOx) < step * 0.5 && Math.abs(b.oy - clampedOy) < step * 0.5
+                        );
+                        if (!isDup) localBests.push({ox: clampedOx, oy: clampedOy, count});
+                    }
+                    if (Date.now() - lastYield > 40) {
+                        await nextFrame();
+                        lastYield = Date.now();
+                        if (Date.now() - startTime > BUDGET_MS) return { timedOut: true, max: localMax, bests: localBests };
                     }
                 }
             }
-            if (finalBests.length === 0) finalBests = coarseBests.slice(0, 20);
+            return { max: localMax, bests: localBests };
+        }
 
+        // 用给定 bests 收尾：填充下拉框、应用最优配置、恢复按钮状态
+        const finalize = (bests) => {
+            const d = decimals();
             const selector = document.getElementById('sweep_selector');
             selector.innerHTML = '';
-            finalBests.forEach(cfg => {
+            bests.sort((a, b) => b.count - a.count).forEach(cfg => {
                 let opt = document.createElement('option');
                 opt.value = `${cfg.ox},${cfg.oy}`;
-                opt.text = `Dies: ${cfg.count} | Offset: (${fromInternal(cfg.ox).toFixed(6)}, ${fromInternal(cfg.oy).toFixed(6)}) ${unitLabel()}`;
+                opt.text = `Dies: ${cfg.count} | Offset: (${fromInternal(cfg.ox).toFixed(d)}, ${fromInternal(cfg.oy).toFixed(d)}) ${unitLabel()}`;
                 selector.appendChild(opt);
             });
             document.getElementById('sweep_ui').style.display = 'flex';
-            if (finalBests.length > 0) applySelectedSweep();
+            if (bests.length > 0) applySelectedSweep();
             btn.innerText = originalText; btn.disabled = false;
-        }, 50);
+            cancelBtn.style.display = 'none';
+            progress.style.display = 'none';
+        };
+
+        // 取消或超时即停止，返回当前最优
+        const shouldStop = () => sweepCancelled || (Date.now() - startTime > BUDGET_MS);
+
+        // === Level 1: Coarse (5% of step, minimum 0.5mm) ===
+        progress.innerText = 'Sweeping: Level 1/4 (Coarse)...';
+        await nextFrame();
+        const coarseStep = Math.max(0.5, Math.max(stepX, stepY) / 20);
+        let result = await gridSearch(0, stepX, 0, stepY, coarseStep, 0, [], 10);
+        let maxDies = result.max;
+        let coarseBests = result.bests;
+        if (shouldStop()) {
+            finalize(coarseBests.length ? coarseBests : [{ox: stepX/2, oy: stepY/2, count: maxDies}]);
+            return;
+        }
+        if (coarseBests.length === 0) {
+            // Fallback: if nothing found, try center
+            coarseBests = [{ox: stepX/2, oy: stepY/2, count: evalOffset(stepX/2, stepY/2)}];
+            maxDies = coarseBests[0].count;
+        }
+
+        // === Level 2: Medium (0.5mm step, around top coarse bests) ===
+        progress.innerText = `Sweeping: Level 2/4 (Medium, ${coarseBests.length} regions)...`;
+        await nextFrame();
+        const mediumStep = 0.5;
+        const mediumRadius = coarseStep / 2;
+        let mediumBests = [];
+        let mediumMax = maxDies;
+        for (const cb of coarseBests.slice(0, 5)) {
+            const sx = Math.max(0, cb.ox - mediumRadius), ex = Math.min(stepX, cb.ox + mediumRadius);
+            const sy = Math.max(0, cb.oy - mediumRadius), ey = Math.min(stepY, cb.oy + mediumRadius);
+            const res = await gridSearch(sx, ex, sy, ey, mediumStep, mediumMax, mediumBests, 10);
+            if (shouldStop()) { finalize(res.bests); return; }
+            mediumMax = res.max;
+            mediumBests = res.bests;
+        }
+
+        // === Level 3: Fine (0.05mm step, around top medium bests) ===
+        progress.innerText = `Sweeping: Level 3/4 (Fine, ${mediumBests.length} regions)...`;
+        await nextFrame();
+        const fineStep = 0.05;
+        const fineRadius = mediumStep;
+        let fineBests = [];
+        let fineMax = mediumMax;
+        for (const mb of mediumBests.slice(0, 5)) {
+            const sx = Math.max(0, mb.ox - fineRadius), ex = Math.min(stepX, mb.ox + fineRadius);
+            const sy = Math.max(0, mb.oy - fineRadius), ey = Math.min(stepY, mb.oy + fineRadius);
+            const res = await gridSearch(sx, ex, sy, ey, fineStep, fineMax, fineBests, 10);
+            if (shouldStop()) { finalize(res.bests); return; }
+            fineMax = res.max;
+            fineBests = res.bests;
+        }
+
+        // === Level 4: Ultra-fine (0.02mm step, around top fine bests) ===
+        progress.innerText = `Sweeping: Level 4/4 (Ultra-fine, ${fineBests.length} regions)...`;
+        await nextFrame();
+        const ufineStep = 0.02; // Required precision: 20um
+        const ufineRadius = fineStep;
+        let finalBests = [];
+        let finalMax = fineMax;
+        for (const fb of fineBests.slice(0, 5)) {
+            const sx = Math.max(0, fb.ox - ufineRadius), ex = Math.min(stepX, fb.ox + ufineRadius);
+            const sy = Math.max(0, fb.oy - ufineRadius), ey = Math.min(stepY, fb.oy + ufineRadius);
+            const res = await gridSearch(sx, ex, sy, ey, ufineStep, finalMax, finalBests, 20);
+            if (shouldStop()) { finalize(res.bests); return; }
+            finalMax = res.max;
+            finalBests = res.bests;
+        }
+
+        // Fallback
+        if (finalBests.length === 0) finalBests = coarseBests.slice(0, 20);
+        finalize(finalBests);
     }
 
     function applySelectedSweep() {
         const val = document.getElementById('sweep_selector').value.split(',');
-        document.getElementById('offset_x').value = fromInternal(parseFloat(val[0])).toFixed(6);
-        document.getElementById('offset_y').value = fromInternal(parseFloat(val[1])).toFixed(6);
+        const d = decimals();
+        document.getElementById('offset_x').value = fromInternal(parseFloat(val[0])).toFixed(d);
+        document.getElementById('offset_y').value = fromInternal(parseFloat(val[1])).toFixed(d);
         triggerUpdate();
     }
 
-    // === CANVAS RENDERING ===
+    // =====================================================================
+    // 4. ADVANCED LAYOUT — 偏心外切割道模式
+    // =====================================================================
+    let layoutDefaultsSet = false;
+    let showShotOutlines = false;
+
+    function toggleLayout() {
+        const enabled = document.getElementById('layout_enabled').checked;
+        document.getElementById('layout_panel').style.display = enabled ? 'block' : 'none';
+        if (enabled && !layoutDefaultsSet) {
+            // 首次启用：预填对称默认值 outer=(scribe+overlap)/2，便于验证退化一致性
+            const p = getParams();
+            const sx = fromInternal((p.scribeX + p.overlapX) / 2).toFixed(decimals());
+            const sy = fromInternal((p.scribeY + p.overlapY) / 2).toFixed(decimals());
+            document.getElementById('outer_l').value = sx;
+            document.getElementById('outer_r').value = sx;
+            document.getElementById('outer_t').value = sy;
+            document.getElementById('outer_b').value = sy;
+            layoutDefaultsSet = true;
+        }
+        triggerUpdate();
+    }
+
+    // 在 wafer map 画布上显示/隐藏每个 shot 的轮廓（便于观察 shot 边界与外切割道设置）
+    function toggleShotOutlines() {
+        showShotOutlines = document.getElementById('show_shot_outlines').checked;
+        renderCanvas();
+    }
+
+    function updateLayoutInfo() {
+        const info = document.getElementById('layout_info');
+        const p = getParams();
+        if (!p.layoutEnabled) { info.innerHTML = ''; info.className = 'layout-info'; return; }
+        const { shotX, shotY, stepX, stepY } = getShotStep(p);
+        const d = decimals();
+        // 步进方向有效切割道 = 相邻 shot 间 die 的 edge-to-edge 距离（对称时应等于 scribe）
+        const eeX = p.outerL + p.outerR - p.overlapX;
+        const eeY = p.outerT + p.outerB - p.overlapY;
+        const warn = eeX < 0 || eeY < 0;
+        info.className = 'layout-info' + (warn ? ' warn' : '');
+        info.innerHTML =
+            `Shot: <b>${fromInternal(shotX).toFixed(d)}</b> × <b>${fromInternal(shotY).toFixed(d)}</b> ${unitLabel()}<br>` +
+            `Step: <b>${fromInternal(stepX).toFixed(d)}</b> × <b>${fromInternal(stepY).toFixed(d)}</b> ${unitLabel()}<br>` +
+            `Step e-to-e X: ${fromInternal(eeX).toFixed(d)} / Y: ${fromInternal(eeY).toFixed(d)} ${unitLabel()}` +
+            (warn ? '<br><b>WARNING:</b> step e-to-e < 0 — 相邻 shot die 重叠' : '');
+    }
+
+    // =====================================================================
+    // 5. WAFER CANVAS RENDERING — 主晶圆图画布（缩放/平移/tooltip/绘制）
+    // =====================================================================
     const canvas = document.getElementById('waferCanvas');
     const ctx = canvas.getContext('2d');
     const tooltip = document.getElementById('tooltip');
@@ -363,9 +641,11 @@
     function triggerUpdate() {
         currentData = calculateWaferMap(getParams());
         document.getElementById('stat_dies').innerText = currentData.diesCount;
+        document.getElementById('stat_ugly').innerText = currentData.uglyCount;
         document.getElementById('stat_full').innerText = currentData.fullCells;
         document.getElementById('stat_partial').innerText = currentData.partialCells;
         updateUtilization();
+        updateLayoutInfo();
         resetView();
         if (activeTab === 'annotation') renderAnnotation();
     }
@@ -376,8 +656,10 @@
         if (!currentData.p.waferDia) return;
         const p = currentData.p, radius = p.waferDia / 2, w = canvas.width, h = canvas.height;
         const flatY = -radius + p.flatHeight;
-        const pitchX = p.dieX + p.scribeX; // scribe-center-to-scribe-center pitch
+        const pitchX = p.dieX + p.scribeX;
         const pitchY = p.dieY + p.scribeY;
+        const { shotX, shotY } = getShotStep(p);
+        const effO = getEffOuter(p);
 
         ctx.clearRect(0, 0, w, h); ctx.save(); ctx.scale(dpr, dpr);
         ctx.translate(cssW/2 + viewTransform.x, cssH/2 + viewTransform.y);
@@ -404,52 +686,68 @@
             ctx.fillStyle = 'rgba(220,38,38,0.06)'; ctx.fill(); ctx.restore();
         }
 
-        // === Scribe center-line grid (replaces shot boundary) ===
-        // Clip to wafer circle for clean edges
+        // Scribe center-line grid
         ctx.save();
         ctx.beginPath(); ctx.arc(0, 0, radius, 0, 2 * Math.PI); ctx.clip();
-
         ctx.strokeStyle = 'rgba(100, 116, 139, 0.30)';
         ctx.lineWidth = lw(0.5);
         ctx.setLineDash([4/totalScale, 4/totalScale]);
-
-        // Determine grid origin: align to die placement
-        // Die centers are at offsetX + n*pitchX; scribe centers are offset by pitchX/2
-        const gridOriginX = p.offsetX + (p.arrayX % 2 === 1 ? pitchX / 2 : 0);
-        const gridOriginY = p.offsetY + (p.arrayY % 2 === 1 ? pitchY / 2 : 0);
+        // 统一网格 origin（偏心/对称通用；对称时自动退化为原公式）。
+        // 数学坐标 y 向上，die 阵列自底部（dj=0）起排，故网格 y 用 effO.B 对齐 scribe 线
+        const gridOriginX = p.offsetX + effO.L - p.scribeX / 2 - shotX / 2;
+        const gridOriginY = p.offsetY + effO.B - p.scribeY / 2 - shotY / 2;
         const nLinesX = Math.ceil(radius / pitchX) + 2;
         const nLinesY = Math.ceil(radius / pitchY) + 2;
-
-        // Vertical scribe center lines
         for (let n = -nLinesX; n <= nLinesX; n++) {
             const gx = gridOriginX + n * pitchX;
             if (Math.abs(gx) > radius + pitchX) continue;
             ctx.beginPath(); ctx.moveTo(gx, -radius); ctx.lineTo(gx, radius); ctx.stroke();
         }
-        // Horizontal scribe center lines
         for (let n = -nLinesY; n <= nLinesY; n++) {
             const gy = gridOriginY + n * pitchY;
             if (Math.abs(gy) > radius + pitchY) continue;
             ctx.beginPath(); ctx.moveTo(-radius, gy); ctx.lineTo(radius, gy); ctx.stroke();
         }
         ctx.setLineDash([]);
-        ctx.restore(); // remove clip
+        ctx.restore();
 
-        // Dies
+        // Dies：gross die 用绿/黄，ugly die（shot 曝光但 die 无效）用半透明红
         currentData.cells.forEach(cell => {
             cell.dies.forEach(die => {
+                const isHovered = hoveredDie === die;
                 if (die.valid) {
-                    const isHovered = hoveredDie === die;
                     ctx.fillStyle = isHovered ? 'rgba(59, 130, 246, 0.85)' : (cell.type === 'full' ? 'rgba(134, 239, 172, 0.75)' : 'rgba(253, 224, 71, 0.75)');
                     ctx.strokeStyle = isHovered ? '#1d4ed8' : (cell.type === 'full' ? '#16a34a' : '#ca8a04');
-                    ctx.lineWidth = lw(isHovered ? 1.2 : 0.4);
-                    ctx.fillRect(die.x - p.dieX/2, die.y - p.dieY/2, p.dieX, p.dieY);
-                    ctx.strokeRect(die.x - p.dieX/2, die.y - p.dieY/2, p.dieX, p.dieY);
+                } else {
+                    ctx.fillStyle = isHovered ? 'rgba(239, 68, 68, 0.75)' : 'rgba(220, 38, 38, 0.4)';
+                    ctx.strokeStyle = '#b91c1c';
                 }
+                ctx.lineWidth = lw(isHovered ? 1.2 : 0.4);
+                ctx.fillRect(die.x - p.dieX/2, die.y - p.dieY/2, p.dieX, p.dieY);
+                ctx.strokeRect(die.x - p.dieX/2, die.y - p.dieY/2, p.dieX, p.dieY);
             });
         });
 
-        // Notch (bottom, pointing UP into wafer)
+        // Shot 轮廓（可选开关，偏心模式下便于观察 shot 边界与外切割道是否正确）
+        if (showShotOutlines) {
+            const { shotX: shX, shotY: shY, stepX: stX, stepY: stY } = getShotStep(p);
+            ctx.strokeStyle = 'rgba(124, 58, 237, 0.55)';
+            ctx.lineWidth = lw(1);
+            ctx.setLineDash([7/totalScale, 5/totalScale]);
+            const sMaxX = Math.ceil((radius + shX/2) / stX) + 1;
+            const sMaxY = Math.ceil((radius + shY/2) / stY) + 1;
+            const sHalfDiag = Math.sqrt(shX*shX + shY*shY) / 2;
+            for (let i = -sMaxX; i <= sMaxX; i++) {
+                for (let j = -sMaxY; j <= sMaxY; j++) {
+                    const scx = i*stX + p.offsetX, scy = j*stY + p.offsetY;
+                    if (scx*scx + scy*scy > (radius + sHalfDiag) * (radius + sHalfDiag)) continue;
+                    ctx.strokeRect(scx - shX/2, scy - shY/2, shX, shY);
+                }
+            }
+            ctx.setLineDash([]);
+        }
+
+        // Notch
         const notchH = radius * 0.03, notchW = radius * 0.025, ny = -radius;
         ctx.beginPath(); ctx.moveTo(-notchW, ny); ctx.lineTo(0, ny + notchH); ctx.lineTo(notchW, ny); ctx.closePath();
         ctx.fillStyle = '#2563eb'; ctx.fill();
@@ -473,14 +771,17 @@
             const p = currentData.p; let found = null;
             for (let cell of currentData.cells) {
                 for (let die of cell.dies) {
-                    if (die.valid && Math.abs(lx - die.x) <= p.dieX/2 && Math.abs(ly - die.y) <= p.dieY/2) { found = { ...die, cellType: cell.type }; break; }
+                    if (Math.abs(lx - die.x) <= p.dieX/2 && Math.abs(ly - die.y) <= p.dieY/2) { found = { ...die, cellType: cell.type }; break; }
                 }
                 if (found) break;
             }
             if (found !== hoveredDie) { hoveredDie = found; requestAnimationFrame(renderCanvas); }
             if (found) {
+                const d = decimals();
+                const dieBin = found.valid ? 'GROSS DIE' : 'UGLY DIE';
+                const cellLabel = found.cellType === 'none' ? 'UGLY-ONLY SHOT' : found.cellType.toUpperCase();
                 tooltip.style.display = 'block'; tooltip.style.left = (mx + 15) + 'px'; tooltip.style.top = (my + 15) + 'px';
-                tooltip.innerHTML = `Pos: <span>(${fromInternal(found.x).toFixed(6)}, ${fromInternal(found.y).toFixed(6)}) ${unitLabel()}</span><br>Type: <span>${found.cellType.toUpperCase()} CELL</span>`;
+                tooltip.innerHTML = `Pos: <span>(${fromInternal(found.x).toFixed(d)}, ${fromInternal(found.y).toFixed(d)}) ${unitLabel()}</span><br>Die: <span>${dieBin}</span><br>Cell: <span>${cellLabel}</span>`;
             } else { tooltip.style.display = 'none'; }
         }
     });
@@ -496,9 +797,9 @@
         requestAnimationFrame(renderCanvas);
     });
 
-    // === PDF ===
-    function fmt6(val) { return fromInternal(val).toFixed(6); }
-
+    // =====================================================================
+    // 6. EXPORT — PDF 报告 / CSV 导入导出
+    // =====================================================================
     function drawPdfTable(doc, headers, rows, startX, startY, colWidths, options = {}) {
         const { headerBg = [37, 99, 235], headerTextColor = [255, 255, 255], rowBg1 = [255, 255, 255], rowBg2 = [241, 245, 249], borderColor = [200, 200, 200], fontSz = 10, rowH = 10, padding = 2 } = options;
         const totalW = colWidths.reduce((a, b) => a + b, 0); let y = startY;
@@ -523,6 +824,7 @@
         const { shotX, shotY, stepX, stepY } = getShotStep(p);
         const today = new Date().toLocaleString();
         const u = unitLabel();
+        const d = decimals();
         const radius = p.waferDia / 2;
         const flatY = -radius + p.flatHeight;
 
@@ -541,7 +843,6 @@
         doc.setLineWidth(0.5); doc.setDrawColor(37, 99, 235); doc.circle(cx, cy, radius * scale, 'S');
         doc.setLineWidth(0.2); doc.setDrawColor(22, 163, 74); doc.circle(cx, cy, (radius - p.clearance) * scale, 'S');
 
-        // Flat line
         if (p.flatHeight > 0) {
             const flatHalfW = Math.sqrt(Math.max(0, radius*radius - flatY*flatY)) * scale;
             const flatPdfY = cy - flatY * scale;
@@ -549,10 +850,10 @@
             doc.line(cx - flatHalfW, flatPdfY, cx + flatHalfW, flatPdfY);
         }
 
-        // Scribe center grid in PDF (clipped to circle via manual check)
         const pitchX = p.dieX + p.scribeX, pitchY = p.dieY + p.scribeY;
-        const gridOX = p.offsetX + (p.arrayX % 2 === 1 ? pitchX / 2 : 0);
-        const gridOY = p.offsetY + (p.arrayY % 2 === 1 ? pitchY / 2 : 0);
+        const effO = getEffOuter(p);
+        const gridOX = p.offsetX + effO.L - p.scribeX / 2 - shotX / 2;
+        const gridOY = p.offsetY + effO.B - p.scribeY / 2 - shotY / 2;
         doc.setDrawColor(150, 160, 180); doc.setLineWidth(0.08);
         const nLX = Math.ceil(radius / pitchX) + 1, nLY = Math.ceil(radius / pitchY) + 1;
         for (let n = -nLX; n <= nLX; n++) {
@@ -566,7 +867,6 @@
             if (halfChord > 0) doc.line(cx - halfChord*scale, cy - gy*scale, cx + halfChord*scale, cy - gy*scale);
         }
 
-        // Dies
         currentData.cells.forEach(cell => {
             cell.dies.forEach(die => {
                 if (die.valid) {
@@ -578,70 +878,105 @@
             });
         });
 
-        // Notch (pointing UP into wafer)
         const notchH = radius * 0.03 * scale, notchW = radius * 0.025 * scale, nr = radius * scale;
         doc.setFillColor(37, 99, 235); doc.setDrawColor(37, 99, 235); doc.setLineWidth(0.1);
         doc.triangle(cx - notchW, cy + nr, cx, cy + nr - notchH, cx + notchW, cy + nr, 'FD');
 
         // Page 3: Reticle Parameters
         doc.addPage(); drawHeader("Reticle Parameters & Configuration"); doc.setFontSize(13); doc.text("2. Reticle (Shot) Configuration", 20, 45);
-        drawPdfTable(doc, ['Parameter', 'Value', 'Unit', 'Description'], [
-            ['Die Size X', fmt6(p.dieX), u, 'Single die width'],
-            ['Die Size Y', fmt6(p.dieY), u, 'Single die height'],
-            ['Scribe Line X', fmt6(p.scribeX), u, 'Horizontal scribe width'],
-            ['Scribe Line Y', fmt6(p.scribeY), u, 'Vertical scribe width'],
+        const reticleRows = [
+            ['Die Size X', fmt(p.dieX), u, 'Single die width'],
+            ['Die Size Y', fmt(p.dieY), u, 'Single die height'],
+            ['Scribe Line X', fmt(p.scribeX), u, 'Horizontal scribe width'],
+            ['Scribe Line Y', fmt(p.scribeY), u, 'Vertical scribe width'],
             ['Die Array X', String(p.arrayX), 'dies', 'Dies per shot (horizontal)'],
             ['Die Array Y', String(p.arrayY), 'dies', 'Dies per shot (vertical)'],
-            ['Shot Size X', fmt6(shotX), u, '(DieX+ScribeX)×ArrayX + OverlapX'],
-            ['Shot Size Y', fmt6(shotY), u, '(DieY+ScribeY)×ArrayY + OverlapY'],
-            ['Step Size X', fmt6(stepX), u, 'Shot Size X - Overlap X'],
-            ['Step Size Y', fmt6(stepY), u, 'Shot Size Y - Overlap Y'],
-            ['Overlap X', fmt6(p.overlapX), u, 'Shot Size X - Step Size X'],
-            ['Overlap Y', fmt6(p.overlapY), u, 'Shot Size Y - Step Size Y'],
-        ], 20, 55, [42, 38, 20, 70], { rowH: 10, fontSz: 8 });
+        ];
+        if (p.layoutEnabled) {
+            reticleRows.push(
+                ['Outer Left', fmt(p.outerL), u, 'Die edge to shot left edge'],
+                ['Outer Right', fmt(p.outerR), u, 'Die edge to shot right edge'],
+                ['Outer Top', fmt(p.outerT), u, 'Die edge to shot top edge'],
+                ['Outer Bottom', fmt(p.outerB), u, 'Die edge to shot bottom edge'],
+                ['Shot Size X', fmt(shotX), u, '(ArrayX-1)×(DieX+ScribeX)+DieX+OuterL+OuterR'],
+                ['Shot Size Y', fmt(shotY), u, '(ArrayY-1)×(DieY+ScribeY)+DieY+OuterT+OuterB'],
+                ['Step Size X', fmt(stepX), u, 'Shot Size X - Overlap X'],
+                ['Step Size Y', fmt(stepY), u, 'Shot Size Y - Overlap Y'],
+                ['Step e-to-e X', fmt(p.outerL + p.outerR - p.overlapX), u, 'Adjacent shot die edge-to-edge'],
+                ['Step e-to-e Y', fmt(p.outerT + p.outerB - p.overlapY), u, 'Adjacent shot die edge-to-edge'],
+                ['Overlap X', fmt(p.overlapX), u, 'Shot Size X - Step Size X'],
+                ['Overlap Y', fmt(p.overlapY), u, 'Shot Size Y - Step Size Y'],
+            );
+        } else {
+            reticleRows.push(
+                ['Shot Size X', fmt(shotX), u, '(DieX+ScribeX)×ArrayX + OverlapX'],
+                ['Shot Size Y', fmt(shotY), u, '(DieY+ScribeY)×ArrayY + OverlapY'],
+                ['Step Size X', fmt(stepX), u, 'Shot Size X - Overlap X'],
+                ['Step Size Y', fmt(stepY), u, 'Shot Size Y - Overlap Y'],
+                ['Overlap X', fmt(p.overlapX), u, 'Shot Size X - Step Size X'],
+                ['Overlap Y', fmt(p.overlapY), u, 'Shot Size Y - Step Size Y'],
+            );
+        }
+        drawPdfTable(doc, ['Parameter', 'Value', 'Unit', 'Description'], reticleRows, 20, 55, [42, 38, 20, 70], { rowH: 10, fontSz: 8 });
 
         // Page 4: System
         doc.addPage(); drawHeader("System Parameters & Statistics"); doc.setFontSize(13); doc.text("3. System Configuration", 20, 45);
-        drawPdfTable(doc, ['Parameter', 'Value', 'Unit'], [
-            ['Wafer Diameter', fmt6(p.waferDia), u],
-            ['Edge Clearance', fmt6(p.clearance), u],
-            ['Flat Height', fmt6(p.flatHeight), u],
-            ['Grid Offset X', fmt6(p.offsetX), u],
-            ['Grid Offset Y', fmt6(p.offsetY), u],
-        ], 20, 55, [60, 55, 55], { rowH: 10, fontSz: 10 });
+        const systemRows = [
+            ['Layout Mode', p.layoutEnabled ? 'Eccentric' : 'Symmetric', '-'],
+            ['Wafer Diameter', fmt(p.waferDia), u],
+            ['Edge Clearance', fmt(p.clearance), u],
+            ['Flat Height', fmt(p.flatHeight), u],
+            ['Grid Offset X', fmt(p.offsetX), u],
+            ['Grid Offset Y', fmt(p.offsetY), u],
+        ];
+        if (p.layoutEnabled) {
+            systemRows.push(['Outer L / R', `${fmt(p.outerL)} / ${fmt(p.outerR)}`, u]);
+            systemRows.push(['Outer T / B', `${fmt(p.outerT)} / ${fmt(p.outerB)}`, u]);
+        }
+        drawPdfTable(doc, ['Parameter', 'Value', 'Unit'], systemRows, 20, 55, [60, 55, 55], { rowH: 10, fontSz: 10 });
 
         const waferArea = Math.PI * Math.pow(radius, 2);
         const totalDieArea = currentData.diesCount * (p.dieX * p.dieY);
         const mfu = (shotX * shotY) / (26 * 33);
-        doc.setFontSize(13); doc.text("4. Area & Utilization Analysis", 20, 120);
+        // Area 表随 System 表行数动态下移，避免偏心模式下行数增多导致重叠
+        const areaTop = 70 + systemRows.length * 10;
+        doc.setFontSize(13); doc.text("4. Area & Utilization Analysis", 20, areaTop);
         drawPdfTable(doc, ['Metric', 'Value', 'Unit'], [
             ['Total Gross Dies', String(currentData.diesCount), 'dies'],
+            ['Ugly Dies', String(currentData.uglyCount), 'dies'],
             ['Full Cells', String(currentData.fullCells), 'cells'],
             ['Partial Cells', String(currentData.partialCells), 'cells'],
-            ['Wafer Area', waferArea.toFixed(6), u + '²'],
-            ['Effective Die Area', totalDieArea.toFixed(6), u + '²'],
-            ['Area Utilization', ((totalDieArea / waferArea) * 100).toFixed(6), '%'],
-            ['MFU (Shot/26×33)', (mfu * 100).toFixed(6), '%'],
-        ], 20, 130, [60, 55, 55], { rowH: 10, fontSz: 10 });
+            ['Wafer Area', waferArea.toFixed(d), u + '²'],
+            ['Effective Die Area', totalDieArea.toFixed(d), u + '²'],
+            ['Area Utilization', ((totalDieArea / waferArea) * 100).toFixed(d), '%'],
+            ['MFU (Shot/26×33)', (mfu * 100).toFixed(d), '%'],
+        ], 20, areaTop + 10, [60, 55, 55], { rowH: 10, fontSz: 10 });
         doc.save('Wafer_Map_Vector_Report.pdf');
     }
 
     function exportCSV() {
         const p = getParams(); let csv = "Parameter,Value,Unit\n";
-        const u = unitLabel();
-        csv += `dieX,${fromInternal(p.dieX).toFixed(6)},${u}\n`;
-        csv += `dieY,${fromInternal(p.dieY).toFixed(6)},${u}\n`;
-        csv += `scribeX,${fromInternal(p.scribeX).toFixed(6)},${u}\n`;
-        csv += `scribeY,${fromInternal(p.scribeY).toFixed(6)},${u}\n`;
-        csv += `overlapX,${fromInternal(p.overlapX).toFixed(6)},${u}\n`;
-        csv += `overlapY,${fromInternal(p.overlapY).toFixed(6)},${u}\n`;
+        const u = unitLabel(), d = decimals();
+        csv += `dieX,${fromInternal(p.dieX).toFixed(d)},${u}\n`;
+        csv += `dieY,${fromInternal(p.dieY).toFixed(d)},${u}\n`;
+        csv += `scribeX,${fromInternal(p.scribeX).toFixed(d)},${u}\n`;
+        csv += `scribeY,${fromInternal(p.scribeY).toFixed(d)},${u}\n`;
+        csv += `overlapX,${fromInternal(p.overlapX).toFixed(d)},${u}\n`;
+        csv += `overlapY,${fromInternal(p.overlapY).toFixed(d)},${u}\n`;
         csv += `arrayX,${p.arrayX},count\n`;
         csv += `arrayY,${p.arrayY},count\n`;
-        csv += `waferDia,${fromInternal(p.waferDia).toFixed(6)},${u}\n`;
-        csv += `clearance,${fromInternal(p.clearance).toFixed(6)},${u}\n`;
-        csv += `flatHeight,${fromInternal(p.flatHeight).toFixed(6)},${u}\n`;
-        csv += `offsetX,${fromInternal(p.offsetX).toFixed(6)},${u}\n`;
-        csv += `offsetY,${fromInternal(p.offsetY).toFixed(6)},${u}\n`;
+        csv += `waferDia,${fromInternal(p.waferDia).toFixed(d)},${u}\n`;
+        csv += `clearance,${fromInternal(p.clearance).toFixed(d)},${u}\n`;
+        csv += `flatHeight,${fromInternal(p.flatHeight).toFixed(d)},${u}\n`;
+        csv += `offsetX,${fromInternal(p.offsetX).toFixed(d)},${u}\n`;
+        csv += `offsetY,${fromInternal(p.offsetY).toFixed(d)},${u}\n`;
+        csv += `layoutEnabled,${p.layoutEnabled ? 1 : 0},flag\n`;
+        if (p.layoutEnabled) {
+            csv += `outerL,${fromInternal(p.outerL).toFixed(d)},${u}\n`;
+            csv += `outerR,${fromInternal(p.outerR).toFixed(d)},${u}\n`;
+            csv += `outerT,${fromInternal(p.outerT).toFixed(d)},${u}\n`;
+            csv += `outerB,${fromInternal(p.outerB).toFixed(d)},${u}\n`;
+        }
         const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = "wafer_config.csv"; a.click();
     }
 
@@ -649,15 +984,73 @@
         if (!e.target.files[0]) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const mapKeys = { dieX: 'die_x', dieY: 'die_y', scribeX: 'scribe_x', scribeY: 'scribe_y', overlapX: 'overlap_x', overlapY: 'overlap_y', arrayX: 'array_x', arrayY: 'array_y', waferDia: 'wafer_dia', clearance: 'clearance', flatHeight: 'flat_height', offsetX: 'offset_x', offsetY: 'offset_y' };
+            const mapKeys = { dieX: 'die_x', dieY: 'die_y', scribeX: 'scribe_x', scribeY: 'scribe_y', overlapX: 'overlap_x', overlapY: 'overlap_y', arrayX: 'array_x', arrayY: 'array_y', waferDia: 'wafer_dia', clearance: 'clearance', flatHeight: 'flat_height', offsetX: 'offset_x', offsetY: 'offset_y', outerL: 'outer_l', outerR: 'outer_r', outerT: 'outer_t', outerB: 'outer_b' };
+            let layoutEnabled = false;
             ev.target.result.split('\n').forEach(row => {
                 const parts = row.split(',');
-                const k = parts[0], v = parts[1];
-                if (k && v && mapKeys[k]) document.getElementById(mapKeys[k]).value = parseFloat(v);
+                const k = parts[0], v = parts[1], unit = (parts[2] || '').trim().toLowerCase();
+                if (!k || !v) return;
+                if (k === 'layoutEnabled') { layoutEnabled = parseFloat(v) === 1; return; }
+                const el = document.getElementById(mapKeys[k]);
+                if (!el) return;
+                const raw = parseFloat(v);
+                if (isNaN(raw)) return;
+                // 数组/计数类字段无单位，直接写入
+                if (k === 'arrayX' || k === 'arrayY') { el.value = raw; return; }
+                // 按 CSV 第 3 列 Unit 换算为内部 mm，再按当前显示单位输出；
+                // 旧格式（无 Unit 列）则假定数值与当前单位一致。
+                let internal;
+                if (unit === 'µm' || unit === 'um') internal = raw / 1000;
+                else if (unit === 'mm') internal = raw;
+                else internal = currentUnit === 'um' ? raw / 1000 : raw;
+                el.value = fromInternal(internal).toFixed(decimals());
             });
+            document.getElementById('layout_enabled').checked = layoutEnabled;
+            document.getElementById('layout_panel').style.display = layoutEnabled ? 'block' : 'none';
+            updateInputSteps();
             triggerUpdate();
         };
         reader.readAsText(e.target.files[0]);
+    }
+
+    // 导出每颗 die 的坐标清单：bin（gross/ugly）、shot/die 索引、die 四角、
+    // die 四角 + 1/2 切割道（field）坐标，以及 field 四角距晶圆圆心最远距离。
+    // 坐标相对 wafer 中心，使用当前显示单位（首行 # unit 标注）。
+    function exportDieList() {
+        const p = currentData.p;
+        const u = unitLabel(), d = decimals();
+        const f = (v) => fromInternal(v).toFixed(d);
+        const halfW = p.dieX/2 + p.scribeX/2, halfH = p.dieY/2 + p.scribeY/2;
+        let csv = `# unit,${u}\n`;
+        csv += 'Bin,ShotX,ShotY,DieX,DieY,';
+        csv += 'DieC1X,DieC1Y,DieC2X,DieC2Y,DieC3X,DieC3Y,DieC4X,DieC4Y,';
+        csv += 'FieldC1X,FieldC1Y,FieldC2X,FieldC2Y,FieldC3X,FieldC3Y,FieldC4X,FieldC4Y,';
+        csv += 'MaxDistFromCenter\n';
+        currentData.cells.forEach(cell => {
+            cell.dies.forEach(die => {
+                const dx = die.x, dy = die.y;
+                const c1 = {x: dx - p.dieX/2, y: dy - p.dieY/2};
+                const c2 = {x: dx + p.dieX/2, y: dy - p.dieY/2};
+                const c3 = {x: dx - p.dieX/2, y: dy + p.dieY/2};
+                const c4 = {x: dx + p.dieX/2, y: dy + p.dieY/2};
+                const fc1 = {x: dx - halfW, y: dy - halfH};
+                const fc2 = {x: dx + halfW, y: dy - halfH};
+                const fc3 = {x: dx - halfW, y: dy + halfH};
+                const fc4 = {x: dx + halfW, y: dy + halfH};
+                const maxDist = Math.max(
+                    Math.hypot(fc1.x, fc1.y), Math.hypot(fc2.x, fc2.y),
+                    Math.hypot(fc3.x, fc3.y), Math.hypot(fc4.x, fc4.y)
+                );
+                csv += `${die.valid ? 'gross' : 'ugly'},${cell.si},${cell.sj},${die.di},${die.dj},`;
+                csv += [c1, c2, c3, c4].map(c => `${f(c.x)},${f(c.y)}`).join(',') + ',';
+                csv += [fc1, fc2, fc3, fc4].map(c => `${f(c.x)},${f(c.y)}`).join(',') + ',';
+                csv += f(maxDist) + '\n';
+            });
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = "wafer_die_list.csv";
+        a.click();
     }
 
     function switchTab(tab) {
@@ -669,7 +1062,9 @@
         tab === 'wafer' ? resizeCanvas() : resizeAnnotationCanvas();
     }
 
-    // === ANNOTATION CANVAS ===
+    // =====================================================================
+    // 7. ANNOTATION CANVAS — 参数标注图（尺寸线/可拖动标签）与 Tab 切换
+    // =====================================================================
     const annoCanvas = document.getElementById('annotationCanvas');
     const annoCtx = annoCanvas.getContext('2d');
     let annoCssW = 0, annoCssH = 0, annoTransform = { x: 0, y: 0, scale: 1 }, annoDragging = false, annoDragStart = { x: 0, y: 0 };
@@ -688,6 +1083,7 @@
 
     function renderAnnotation() {
         const p = getParams(); const actx = annoCtx; const w = annoCanvas.width, h = annoCanvas.height;
+        const d = decimals();
         actx.clearRect(0, 0, w, h); if (annoCssW === 0) return;
         actx.save(); actx.scale(dpr, dpr);
         actx.translate(annoCssW / 2 + annoTransform.x, annoCssH / 2 + annoTransform.y);
@@ -696,11 +1092,10 @@
 
         const dieW = p.dieX, dieH = p.dieY, scribeW = p.scribeX, scribeH = p.scribeY;
         const arrayW = p.arrayX, arrayH = p.arrayY, overlapW = p.overlapX, overlapH = p.overlapY;
-        const shotW = (dieW + scribeW) * arrayW + overlapW;
-        const shotH = (dieH + scribeH) * arrayH + overlapH;
-        const stepW = shotW - overlapW;
-        const stepH = shotH - overlapH;
-        const edgeSL_W = (scribeW + overlapW) / 2, edgeSL_H = (scribeH + overlapH) / 2;
+        const { shotX: shotW, shotY: shotH, stepX: stepW, stepY: stepH } = getShotStep(p);
+        const effO = getEffOuter(p);
+        // 第一个 die 距 shot 左/上边缘的有效外切割道（屏幕坐标 dj=0 在顶部，取 outerL/outerT）
+        const edgeSL_W = effO.L, edgeSL_H = effO.T;
 
         const shots = [{ vx: 0, vy: 0 }, { vx: stepW, vy: 0 }, { vx: 0, vy: stepH }];
         const MARGIN = 160, totalVW = shotW + stepW + MARGIN * 2, totalVH = shotH + stepH + MARGIN * 2;
@@ -769,16 +1164,24 @@
             }
         }
 
-        if (arrayW > 1) drawDimLine(originX + sx(edgeSL_W) + sx(dieW), originY, originX + sx(edgeSL_W) + sx(dieW) + sx(scribeW), originY, `Int. Scribe X = ${scribeW.toFixed(3)}`, COL.scribe, -35/annoScale, 'intScribeX', false);
-        if (arrayH > 1) drawDimLine(originX + sx(shotW), originY + sy(edgeSL_H) + sy(dieH), originX + sx(shotW), originY + sy(edgeSL_H) + sy(dieH) + sy(scribeH), `Int. Scribe Y = ${scribeH.toFixed(3)}`, COL.scribe, -35/annoScale, 'intScribeY', true);
-        drawDimLine(originX + sx(shotW) - sx(edgeSL_W), originY, originX + sx(shotW) - sx(edgeSL_W) + sx(scribeW), originY, `Ext. Scribe X = ${scribeW.toFixed(3)}`, COL.scribe, -65/annoScale, 'extScribeX', false);
-        drawDimLine(originX + sx(shotW), originY + sy(shotH) - sy(edgeSL_H), originX + sx(shotW), originY + sy(shotH) - sy(edgeSL_H) + sy(scribeH), `Ext. Scribe Y = ${scribeH.toFixed(3)}`, COL.scribe, -65/annoScale, 'extScribeY', true);
-        drawDimLine(originX, originY + sy(shotH), originX + sx(shotW), originY + sy(shotH), `Shot X = ${shotW.toFixed(3)}`, COL.shot, 40/annoScale, 'shotSizeX', false);
-        drawDimLine(originX, originY, originX, originY + sy(shotH), `Shot Y = ${shotH.toFixed(3)}`, COL.shot, 40/annoScale, 'shotSizeY', true);
-        drawDimLine(originX, originY, originX + sx(stepW), originY, `Step X = ${stepW.toFixed(3)}`, COL.step, -80/annoScale, 'stepX', false);
-        drawDimLine(originX, originY, originX, originY + sy(stepH), `Step Y = ${stepH.toFixed(3)}`, COL.step, 80/annoScale, 'stepY', true);
-        if (overlapW > 0.0001) drawDimLine(originX + sx(stepW), originY + sy(shotH), originX + sx(shotW), originY + sy(shotH), `Overlap X = ${overlapW.toFixed(3)}`, COL.overlap, 25/annoScale, 'overlapX', false);
-        if (overlapH > 0.0001) drawDimLine(originX + sx(shotW), originY + sy(stepH), originX + sx(shotW), originY + sy(shotH), `Overlap Y = ${overlapH.toFixed(3)}`, COL.overlap, -25/annoScale, 'overlapY', true);
+        if (arrayW > 1) drawDimLine(originX + sx(edgeSL_W) + sx(dieW), originY, originX + sx(edgeSL_W) + sx(dieW) + sx(scribeW), originY, `Int. Scribe X = ${scribeW.toFixed(d)}`, COL.scribe, -35/annoScale, 'intScribeX', false);
+        if (arrayH > 1) drawDimLine(originX + sx(shotW), originY + sy(edgeSL_H) + sy(dieH), originX + sx(shotW), originY + sy(edgeSL_H) + sy(dieH) + sy(scribeH), `Int. Scribe Y = ${scribeH.toFixed(d)}`, COL.scribe, -35/annoScale, 'intScribeY', true);
+        // 外部切割道标注：对称模式保持原样；偏心模式分别标注 L/R/T/B
+        if (p.layoutEnabled) {
+            drawDimLine(originX + sx(shotW) - sx(effO.R), originY, originX + sx(shotW), originY, `Ext. Scribe R = ${effO.R.toFixed(d)}`, COL.scribe, -65/annoScale, 'extScribeX', false);
+            drawDimLine(originX, originY, originX + sx(effO.L), originY, `Ext. Scribe L = ${effO.L.toFixed(d)}`, COL.scribe, -95/annoScale, 'extScribeL', false);
+            drawDimLine(originX + sx(shotW), originY + sy(shotH) - sy(effO.B), originX + sx(shotW), originY + sy(shotH), `Ext. Scribe B = ${effO.B.toFixed(d)}`, COL.scribe, -65/annoScale, 'extScribeY', true);
+            drawDimLine(originX, originY, originX, originY + sy(effO.T), `Ext. Scribe T = ${effO.T.toFixed(d)}`, COL.scribe, 95/annoScale, 'extScribeT', true);
+        } else {
+            drawDimLine(originX + sx(shotW) - sx(edgeSL_W), originY, originX + sx(shotW) - sx(edgeSL_W) + sx(scribeW), originY, `Ext. Scribe X = ${scribeW.toFixed(d)}`, COL.scribe, -65/annoScale, 'extScribeX', false);
+            drawDimLine(originX + sx(shotW), originY + sy(shotH) - sy(edgeSL_H), originX + sx(shotW), originY + sy(shotH) - sy(edgeSL_H) + sy(scribeH), `Ext. Scribe Y = ${scribeH.toFixed(d)}`, COL.scribe, -65/annoScale, 'extScribeY', true);
+        }
+        drawDimLine(originX, originY + sy(shotH), originX + sx(shotW), originY + sy(shotH), `Shot X = ${shotW.toFixed(d)}`, COL.shot, 40/annoScale, 'shotSizeX', false);
+        drawDimLine(originX, originY, originX, originY + sy(shotH), `Shot Y = ${shotH.toFixed(d)}`, COL.shot, 40/annoScale, 'shotSizeY', true);
+        drawDimLine(originX, originY, originX + sx(stepW), originY, `Step X = ${stepW.toFixed(d)}`, COL.step, -80/annoScale, 'stepX', false);
+        drawDimLine(originX, originY, originX, originY + sy(stepH), `Step Y = ${stepH.toFixed(d)}`, COL.step, 80/annoScale, 'stepY', true);
+        if (overlapW > 0.0001) drawDimLine(originX + sx(stepW), originY + sy(shotH), originX + sx(shotW), originY + sy(shotH), `Overlap X = ${overlapW.toFixed(d)}`, COL.overlap, 25/annoScale, 'overlapX', false);
+        if (overlapH > 0.0001) drawDimLine(originX + sx(shotW), originY + sy(stepH), originX + sx(shotW), originY + sy(shotH), `Overlap Y = ${overlapH.toFixed(d)}`, COL.overlap, -25/annoScale, 'overlapY', true);
 
         const legendX = -sx(totalVW) / 2 + sx(MARGIN), legendY = -sy(totalVH) / 2 + 5;
         const legendFontSize = Math.max(8, 10 / annoScale), itemH = 16 / annoScale;
@@ -832,7 +1235,15 @@
     annoCanvas.addEventListener('mouseleave', () => { annoDragging = false; activeDragLabel = null; annoCanvas.style.cursor = 'grab'; });
     new ResizeObserver(() => { if (activeTab === 'annotation') resizeAnnotationCanvas(); }).observe(document.getElementById('annotationContainer'));
 
-    window.onload = () => { updateUnitLabels(); resizeCanvas(); triggerUpdate(); };
+    // =====================================================================
+    // 8. INIT — 页面加载初始化
+    // =====================================================================
+    window.onload = () => {
+        updateUnitLabels();
+        updateInputSteps();
+        resizeCanvas();
+        triggerUpdate();
+    };
 </script>
 </body>
 </html>
