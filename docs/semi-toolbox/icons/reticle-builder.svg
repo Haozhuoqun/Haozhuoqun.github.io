@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Reticle Builder">
+  <title>Reticle Builder</title>
+  <rect width="128" height="128" fill="#e9eef4"/>
+  <path d="M23 39V23h16m50 0h16v16m0 50v16H89m-50 0H23V89" fill="none" stroke="#385874" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#9bc3e4" stroke="#547c9c" stroke-width="2">
+    <rect x="32" y="32" width="25" height="25" rx="3"/>
+    <rect x="71" y="32" width="25" height="25" rx="3"/>
+    <rect x="32" y="71" width="25" height="25" rx="3"/>
+    <rect x="71" y="71" width="25" height="25" rx="3"/>
+  </g>
+  <path d="M64 32v17m0 30v17M32 64h17m30 0h17" stroke="#137d84" stroke-width="6" stroke-linecap="round"/>
+  <rect x="59" y="59" width="10" height="10" rx="2.5" fill="#c4792b"/>
+</svg>

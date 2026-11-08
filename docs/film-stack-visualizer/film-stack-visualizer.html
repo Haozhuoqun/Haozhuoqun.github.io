@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Film Stack Visualizer — 稳定实体剖切</title>
+<link rel="icon" type="image/webp" sizes="192x192" href="../semi-toolbox/icons/film-stack-visualizer.webp">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f5f5f7; color: #1d1d1f; height: 100vh; overflow: hidden;
+  }
+  .app { display: flex; height: 100vh; }
+
+  .sidebar {
+    width: 440px; min-width: 440px; background: #ffffff;
+    border-right: 1px solid #e0e0e0; overflow-y: auto; padding: 14px;
+  }
+  .sidebar h3 {
+    margin: 18px 0 8px; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px; color: #666;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sidebar h3:first-of-type { margin-top: 4px; }
+  .item-list { display: flex; flex-direction: column; gap: 4px; }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr 65px 40px 26px;
+    gap: 4px; align-items: center;
+  }
+  .conductor-row {
+    display: grid;
+    grid-template-columns: 24px 1fr 55px 48px 36px 26px;
+    gap: 3px; align-items: center;
+  }
+  .item-row input, .conductor-row input {
+    width: 100%; padding: 4px 5px; font-size: 12px;
+    border: 1px solid #ccc; border-radius: 4px; background: #fff;
+  }
+  .item-row input[type="color"], .conductor-row input[type="color"] {
+    padding: 0; height: 24px; cursor: pointer;
+  }
+  .item-row button, .conductor-row button {
+    padding: 0; height: 24px; border: 1px solid #ddd;
+    background: #fafafa; border-radius: 4px; cursor: pointer;
+    font-size: 14px; line-height: 1; color: #c00;
+  }
+  .item-row button:hover, .conductor-row button:hover { background: #ffe5e5; }
+
+  .type-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 3px;
+    font-size: 10px; font-weight: bold; color: white;
+    user-select: none;
+  }
+  .type-badge.via   { background: #e07a5f; }
+  .type-badge.metal { background: #4a4a4a; }
+
+  .add-btn {
+    margin-top: 6px; padding: 6px 10px; font-size: 12px;
+    border: 1px dashed #bbb; background: transparent;
+    border-radius: 4px; cursor: pointer; color: #555; width: 100%;
+  }
+  .add-btn:hover { background: #f0f0f0; }
+  .add-btn.primary { border-style: solid; border-color: #888; color: #222; }
+  .btn-row { display: flex; gap: 6px; margin-top: 6px; }
+  .btn-row .add-btn { margin-top: 0; }
+
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px; font-size: 12px;
+  }
+  .setting-row label { color: #444; }
+  .setting-row input {
+    width: 180px; padding: 4px 6px; font-size: 12px;
+    border: 1px solid #ccc; border-radius: 4px;
+  }
+  .setting-row input[type="checkbox"] { width: auto; }
+  .hint { font-size: 11px; color: #999; margin-top: 2px; }
+
+  .io-btn {
+    padding: 7px 12px; font-size: 12px; border: 1px solid #bbb;
+    background: #fff; border-radius: 5px; cursor: pointer; color: #333;
+    flex: 1;
+  }
+  .io-btn:hover { background: #f0f0f0; }
+
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .tabs {
+    display: flex; gap: 2px; padding: 8px 12px 0;
+    background: #f5f5f7; border-bottom: 1px solid #ddd;
+  }
+  .tab {
+    padding: 8px 18px; font-size: 13px; border: 1px solid #ddd;
+    border-bottom: none; border-radius: 6px 6px 0 0;
+    background: #eaeaea; cursor: pointer; color: #555;
+  }
+  .tab.active {
+    background: #fff; color: #1d1d1f; font-weight: 600;
+    position: relative; top: 1px;
+  }
+  .view {
+    flex: 1; background: #fff; overflow: hidden; position: relative;
+  }
+  #view-2d { padding: 12px; }
+  #view-3d { padding: 0; }
+  .viewer-toolbar { position:absolute; top:16px; right:16px; }
+  .viewer-toolbar button { padding:8px 14px; border:1px solid #d9dfe7; border-radius:7px; background:#fff; color:#394455; cursor:pointer; }
+  .viewer-status { position:absolute; bottom:16px; left:16px; right:16px; pointer-events:none; font-size:12px; color:#657183; background:#ffffffdc; padding:9px 12px; border-radius:7px; width:fit-content; max-width:calc(100% - 32px); }
+  @media (max-width:800px) { .sidebar { width:320px; min-width:320px; } .setting-row input { width:135px; } }
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+
+    <h3>Films (Dielectrics)</h3>
+    <div id="film-list" class="item-list"></div>
+    <button class="add-btn" id="add-film">+ Add Film</button>
+
+    <h3>Conductors — Damascene (V / M alternating)</h3>
+    <div class="hint" style="margin-bottom:6px;">
+      V = via (细) · M = metal trench (宽) · 底部先 V 后 M
+    </div>
+    <div id="conductor-list" class="item-list"></div>
+    <div class="btn-row">
+      <button class="add-btn" id="add-via">+ Add Via</button>
+      <button class="add-btn" id="add-metal">+ Add Metal</button>
+    </div>
+    <button class="add-btn primary" id="auto-pair">⚡ Auto Pair (V+M × N)</button>
+
+    <h3>Layout</h3>
+    <div class="setting-row">
+      <label>Split counts</label>
+      <input id="split-counts" value="2, 2, -1">
+    </div>
+    <div class="hint">e.g. "2, 2, -1" → 3 panels; -1 = 剩余全部</div>
+    <div class="setting-row">
+      <label>Canvas width</label>
+      <input id="canvas-width" type="number" step="0.5" value="4">
+    </div>
+    <div class="setting-row">
+      <label>Stack start Y (nm)</label>
+      <input id="stack-start-y" type="number" value="200">
+    </div>
+
+    <h3>3D View</h3>
+    <div class="setting-row">
+      <label>Cut corner</label>
+      <input id="cut-corner" type="checkbox" checked>
+    </div>
+    <div class="setting-row">
+      <label>Cut size (%)</label>
+      <input id="cut-size" type="number" min="5" max="50" step="5" value="35">
+    </div>
+    <div class="hint">仅对 3D 生效：移除 +X/+Z 角块；50% 剖切至中心，可观察 Via。</div>
+
+    <div class="setting-row" style="margin-top:10px;">
+      <label for="show-films-3d">显示介质（实体）</label>
+      <input id="show-films-3d" type="checkbox" checked>
+    </div>
+    <div class="setting-row">
+      <label for="show-edges-3d">显示轮廓线</label>
+      <input id="show-edges-3d" type="checkbox">
+    </div>
+    <div class="hint">默认隐藏轮廓线以减轻细层远距离锯齿；关闭介质可查看全部导体。</div>
+
+    <h3>Repeat Annotations</h3>
+    <div class="hint" style="margin-bottom:6px;">
+      Start/End = metal index (0-based, 含两端)
+    </div>
+    <div id="repeat-list" class="item-list"></div>
+    <button class="add-btn" id="add-repeat">+ Add Repeat</button>
+
+    <h3>Import / Export</h3>
+    <div class="btn-row">
+      <button class="io-btn" id="export-btn">⬇ Export JSON</button>
+      <button class="io-btn" id="import-btn">⬆ Import JSON</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none;">
+
+  </aside>
+
+  <main>
+    <div class="tabs">
+      <button class="tab active" data-view="2d">2D Split</button>
+      <button class="tab"        data-view="3d">3D Interactive</button>
+    </div>
+    <div id="view-2d" class="view"></div>
+    <div id="view-3d" class="view" style="display:none;"></div>
+  </main>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* =========================================================
+   1. STATE
+========================================================= */
+function buildDefaultConductors() {
+  const list = [];
+  for (let i = 0; i < 12; i++) {
+    list.push({ type: 'via',   name: `V${i}`, thickness: 27, width: 0.6, color: '#e07a5f' });
+    list.push({ type: 'metal', name: `M${i}`, thickness: 27, width: 2.0, color: '#8a8a8a' });
+  }
+  return list;
+}
+
+const state = {
+  films: [
+    { name: 'Si',  thickness: 200, color: '#a8dadc' },
+    { name: 'Ox',  thickness: 27,  color: '#f1faee' },
+    { name: 'ILD', thickness: 100, color: '#cdb4db' },
+    { name: 'ILD', thickness: 100, color: '#ffc8dd' },
+    { name: 'ILD', thickness: 100, color: '#bde0fe' },
+    { name: 'ILD', thickness: 100, color: '#a2d2ff' },
+  ],
+  conductors: buildDefaultConductors(),
+  splitCounts: [2, 2, -1],
+  canvasWidth: 4,
+  stackStartY: 200,
+  repeatAnnotations: [
+    { metalIndices: [3, 4],   count: 3, label: '', color: '#d62828' },
+    { metalIndices: [7, 8],   count: 5, label: '', color: '#d62828' },
+    { metalIndices: [9, 10],  count: 2, label: '', color: '#d62828' },
+    { metalIndices: [11, 11], count: 2, label: '', color: '#d62828' },
+  ],
+  showFilms3D: true,
+  showEdges3D: false,
+  cutCorner3D: true,
+  cutSize3D: 35,      // 百分比
+};
+
+let currentView = '2d';
+let renderQueued = false;
+
+/* =========================================================
+   2. HELPERS
+========================================================= */
+function positions(items, startY) {
+  let y = startY;
+  return items.map(it => {
+    const y0 = y;
+    y += Number(it.thickness) || 0;
+    return { ...it, y0, y1: y };
+  });
+}
+
+function computeSplitBounds(films, splitCounts) {
+  const n = films.length;
+  if (n === 0) return [];
+  const counts = [];
+  let used = 0;
+  splitCounts.forEach((c, i) => {
+    const isLast = (i === splitCounts.length - 1);
+    if (isLast && (c === -1 || c == null || isNaN(c))) c = n - used;
+    c = Math.max(0, Math.min(c, n - used));
+    counts.push(c);
+    used += c;
+  });
+  if (used < n) counts[counts.length - 1] += n - used;
+
+  const bounds = [];
+  let cur = 0;
+  for (const c of counts) {
+    const h = films.slice(cur, cur + c)
+                    .reduce((s, f) => s + (Number(f.thickness) || 0), 0);
+    const y0 = films.slice(0, cur)
+                    .reduce((s, f) => s + (Number(f.thickness) || 0), 0);
+    bounds.push([y0, y0 + h]);
+    cur += c;
+  }
+  return bounds;
+}
+
+function parseSplitCounts(str) {
+  return String(str).split(',').map(s => {
+    const t = s.trim();
+    if (t === '-1') return -1;
+    const n = parseInt(t, 10);
+    return isNaN(n) ? -1 : n;
+  });
+}
+
+function toHexColor(c) {
+  if (!c) return '#888888';
+  if (/^#[0-9a-fA-F]{6}$/.test(c)) return c;
+  if (/^#[0-9a-fA-F]{3}$/.test(c)) {
+    return '#' + c.slice(1).split('').map(x => x + x).join('');
+  }
+  const d = document.createElement('div');
+  d.style.color = c;
+  document.body.appendChild(d);
+  const rgb = getComputedStyle(d).color;
+  document.body.removeChild(d);
+  const m = rgb.match(/\d+/g);
+  if (!m) return '#888888';
+  return '#' + m.slice(0, 3)
+    .map(x => (+x).toString(16).padStart(2, '0')).join('');
+}
+
+/* =========================================================
+   3. SIDEBAR
+========================================================= */
+const filmListEl      = document.getElementById('film-list');
+const conductorListEl = document.getElementById('conductor-list');
+const repeatListEl    = document.getElementById('repeat-list');
+
+function makeFilmRow(item) {
+  const row = document.createElement('div');
+  row.className = 'item-row';
+
+  const nameIn = document.createElement('input');
+  nameIn.value = item.name; nameIn.placeholder = 'Name';
+  const thickIn = document.createElement('input');
+  thickIn.type = 'number'; thickIn.value = item.thickness; thickIn.placeholder = 'nm';
+  const colorIn = document.createElement('input');
+  colorIn.type = 'color'; colorIn.value = toHexColor(item.color);
+  const del = document.createElement('button');
+  del.textContent = '×'; del.title = 'Delete';
+
+  nameIn.addEventListener('input', e => { item.name = e.target.value; scheduleRender(); });
+  thickIn.addEventListener('input', e => { item.thickness = Number(e.target.value) || 0; scheduleRender(); });
+  colorIn.addEventListener('input', e => { item.color = e.target.value; scheduleRender(); });
+  del.addEventListener('click', () => {
+    const idx = state.films.indexOf(item);
+    if (idx >= 0) state.films.splice(idx, 1);
+    renderSidebar(); scheduleRender();
+  });
+
+  row.append(nameIn, thickIn, colorIn, del);
+  return row;
+}
+
+function makeConductorRow(item) {
+  const row = document.createElement('div');
+  row.className = 'conductor-row';
+
+  const badge = document.createElement('span');
+  badge.className = 'type-badge ' + item.type;
+  badge.textContent = item.type === 'via' ? 'V' : 'M';
+  badge.title = item.type === 'via' ? 'Via' : 'Metal Trench';
+
+  const nameIn = document.createElement('input');
+  nameIn.value = item.name; nameIn.placeholder = 'Name';
+  const thickIn = document.createElement('input');
+  thickIn.type = 'number'; thickIn.value = item.thickness; thickIn.title = 'nm';
+  const widthIn = document.createElement('input');
+  widthIn.type = 'number'; widthIn.step = '0.1';
+  widthIn.value = item.width; widthIn.title = 'Width';
+  const colorIn = document.createElement('input');
+  colorIn.type = 'color'; colorIn.value = toHexColor(item.color);
+  const del = document.createElement('button');
+  del.textContent = '×'; del.title = 'Delete';
+
+  nameIn.addEventListener('input', e => { item.name = e.target.value; scheduleRender(); });
+  thickIn.addEventListener('input', e => { item.thickness = Number(e.target.value) || 0; scheduleRender(); });
+  widthIn.addEventListener('input', e => { item.width = Number(e.target.value) || 0; scheduleRender(); });
+  colorIn.addEventListener('input', e => { item.color = e.target.value; scheduleRender(); });
+  del.addEventListener('click', () => {
+    const idx = state.conductors.indexOf(item);
+    if (idx >= 0) state.conductors.splice(idx, 1);
+    renderSidebar(); scheduleRender();
+  });
+
+  row.append(badge, nameIn, thickIn, widthIn, colorIn, del);
+  return row;
+}
+
+function renderSidebar() {
+  filmListEl.innerHTML = '';
+  state.films.forEach(f => filmListEl.appendChild(makeFilmRow(f)));
+
+  conductorListEl.innerHTML = '';
+  state.conductors.forEach(c => conductorListEl.appendChild(makeConductorRow(c)));
+
+  renderRepeatList();
+}
+
+function renderRepeatList() {
+  repeatListEl.innerHTML = '';
+  state.repeatAnnotations.forEach((ann, i) => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.style.gridTemplateColumns = '55px 55px 55px 1fr 26px';
+
+    const startIn = document.createElement('input');
+    startIn.type = 'number'; startIn.value = ann.metalIndices[0];
+    startIn.title = 'Start metal index (0-based)';
+
+    const endIn = document.createElement('input');
+    endIn.type = 'number'; endIn.value = ann.metalIndices[1];
+    endIn.title = 'End metal index (inclusive)';
+
+    const cntIn = document.createElement('input');
+    cntIn.type = 'number'; cntIn.value = ann.count;
+    cntIn.title = 'Repeat count';
+
+    const colorIn = document.createElement('input');
+    colorIn.type = 'color'; colorIn.value = toHexColor(ann.color || '#d62828');
+
+    const del = document.createElement('button');
+    del.textContent = '×';
+
+    startIn.addEventListener('input', e => {
+      ann.metalIndices[0] = parseInt(e.target.value, 10) || 0;
+      scheduleRender();
+    });
+    endIn.addEventListener('input', e => {
+      ann.metalIndices[1] = parseInt(e.target.value, 10) || 0;
+      scheduleRender();
+    });
+    cntIn.addEventListener('input', e => {
+      ann.count = parseInt(e.target.value, 10) || 0;
+      scheduleRender();
+    });
+    colorIn.addEventListener('input', e => {
+      ann.color = e.target.value;
+      scheduleRender();
+    });
+    del.addEventListener('click', () => {
+      state.repeatAnnotations.splice(i, 1);
+      renderRepeatList(); scheduleRender();
+    });
+
+    row.append(startIn, endIn, cntIn, colorIn, del);
+    repeatListEl.appendChild(row);
+  });
+}
+
+/* ---- Buttons ---- */
+document.getElementById('add-film').addEventListener('click', () => {
+  state.films.push({ name: 'New', thickness: 50, color: '#dddddd' });
+  renderSidebar(); scheduleRender();
+});
+
+document.getElementById('add-via').addEventListener('click', () => {
+  const n = state.conductors.filter(c => c.type === 'via').length;
+  state.conductors.push({
+    type: 'via', name: `V${n}`, thickness: 27, width: 0.6, color: '#e07a5f'
+  });
+  renderSidebar(); scheduleRender();
+});
+
+document.getElementById('add-metal').addEventListener('click', () => {
+  const n = state.conductors.filter(c => c.type === 'metal').length;
+  state.conductors.push({
+    type: 'metal', name: `M${n}`, thickness: 27, width: 2.0, color: '#8a8a8a'
+  });
+  renderSidebar(); scheduleRender();
+});
+
+document.getElementById('auto-pair').addEventListener('click', () => {
+  const n = prompt('生成多少对 (V + M)？', '5');
+  const count = parseInt(n, 10);
+  if (!count || count <= 0) return;
+  let vMax = -1, mMax = -1;
+  state.conductors.forEach(c => {
+    const num = parseInt((c.name || '').replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(num)) {
+      if (c.type === 'via')   vMax = Math.max(vMax, num);
+      if (c.type === 'metal') mMax = Math.max(mMax, num);
+    }
+  });
+  for (let i = 0; i < count; i++) {
+    state.conductors.push({
+      type: 'via', name: `V${++vMax}`, thickness: 27, width: 0.6, color: '#e07a5f'
+    });
+    state.conductors.push({
+      type: 'metal', name: `M${++mMax}`, thickness: 27, width: 2.0, color: '#8a8a8a'
+    });
+  }
+  renderSidebar(); scheduleRender();
+});
+
+document.getElementById('add-repeat').addEventListener('click', () => {
+  state.repeatAnnotations.push({
+    metalIndices: [0, 0], count: 3, label: '', color: '#d62828'
+  });
+  renderRepeatList(); scheduleRender();
+});
+
+/* ---- Settings ---- */
+document.getElementById('split-counts').addEventListener('input', e => {
+  state.splitCounts = parseSplitCounts(e.target.value);
+  scheduleRender();
+});
+document.getElementById('canvas-width').addEventListener('input', e => {
+  state.canvasWidth = Number(e.target.value) || 1;
+  scheduleRender();
+});
+document.getElementById('stack-start-y').addEventListener('input', e => {
+  state.stackStartY = Number(e.target.value) || 0;
+  scheduleRender();
+});
+document.getElementById('cut-corner').addEventListener('change', e => {
+  state.cutCorner3D = e.target.checked;
+  scheduleRender();
+});
+document.getElementById('cut-size').addEventListener('input', e => {
+  state.cutSize3D = Math.max(0, Math.min(50, Number(e.target.value) || 0));
+  scheduleRender();
+});
+
+for (const [id, key] of [['show-films-3d','showFilms3D'], ['show-edges-3d','showEdges3D']]) {
+  document.getElementById(id).addEventListener('change', e => {
+    state[key] = e.target.checked;
+    scheduleRender();
+  });
+}
+
+/* ---- Tabs ---- */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    document.getElementById('view-2d').style.display = currentView === '2d' ? '' : 'none';
+    document.getElementById('view-3d').style.display = currentView === '3d' ? '' : 'none';
+    scheduleRender();
+  });
+});
+
+/* =========================================================
+   4. IMPORT / EXPORT
+========================================================= */
+document.getElementById('export-btn').addEventListener('click', () => {
+  const data = {
+    version: 3,
+    exportedAt: new Date().toISOString(),
+    films: state.films,
+    conductors: state.conductors,
+    splitCounts: state.splitCounts,
+    canvasWidth: state.canvasWidth,
+    stackStartY: state.stackStartY,
+    repeatAnnotations: state.repeatAnnotations,
+    cutCorner3D: state.cutCorner3D,
+    showFilms3D: state.showFilms3D,
+    showEdges3D: state.showEdges3D,
+    cutSize3D: state.cutSize3D,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)],
+                        { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `film-stack-${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('import-btn').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      applyImportedData(data);
+      e.target.value = '';
+    } catch (err) {
+      alert('导入失败：' + err.message);
+      e.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+});
+
+function applyImportedData(data) {
+  let conductors = data.conductors;
+  if (!conductors && (data.metals || data.vias)) {
+    conductors = [];
+    const mets = data.metals || [];
+    const vias = data.vias || [];
+    const maxLen = Math.max(mets.length, vias.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (vias[i]) conductors.push({ type: 'via',   ...vias[i] });
+      if (mets[i]) conductors.push({ type: 'metal', ...mets[i] });
+    }
+  }
+
+  if (Array.isArray(data.films))                 state.films = data.films;
+  if (Array.isArray(conductors))                 state.conductors = conductors;
+  if (Array.isArray(data.splitCounts))           state.splitCounts = data.splitCounts;
+  if (typeof data.canvasWidth === 'number')      state.canvasWidth = data.canvasWidth;
+  if (typeof data.stackStartY === 'number')      state.stackStartY = data.stackStartY;
+  else if (typeof data.metalStartY === 'number') state.stackStartY = data.metalStartY;
+  if (Array.isArray(data.repeatAnnotations))     state.repeatAnnotations = data.repeatAnnotations;
+  if (typeof data.cutCorner3D === 'boolean')     state.cutCorner3D = data.cutCorner3D;
+  if (typeof data.cutSize3D === 'number')        state.cutSize3D = data.cutSize3D;
+
+  document.getElementById('split-counts').value  = state.splitCounts.join(', ');
+  document.getElementById('canvas-width').value  = state.canvasWidth;
+  document.getElementById('stack-start-y').value = state.stackStartY;
+  document.getElementById('cut-corner').checked  = state.cutCorner3D;
+  document.getElementById('cut-size').value      = state.cutSize3D;
+
+  if (typeof data.showFilms3D === 'boolean') state.showFilms3D = data.showFilms3D;
+  if (typeof data.showEdges3D === 'boolean') state.showEdges3D = data.showEdges3D;
+  document.getElementById('show-films-3d').checked = state.showFilms3D;
+  document.getElementById('show-edges-3d').checked = state.showEdges3D;
+  renderSidebar();
+  scheduleRender();
+}
+
+/* =========================================================
+   5. RENDER DISPATCH
+========================================================= */
+function scheduleRender() {
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => {
+    renderQueued = false;
+    if (currentView === '2d') render2D();
+    else render3D();
+  });
+}
+
+/* =========================================================
+   6. 2D RENDER
+========================================================= */
+function render2D() {
+  const container = document.getElementById('view-2d');
+  container.innerHTML = '';
+
+  const filmsWithY  = positions(state.films, 0);
+  const conductors  = positions(state.conductors, state.stackStartY);
+  const metalsWithY = conductors.filter(c => c.type === 'metal');
+
+  const bounds = computeSplitBounds(state.films, state.splitCounts);
+  if (bounds.length === 0) {
+    container.innerHTML = '<div style="color:#999;padding:20px;">No films.</div>';
+    return;
+  }
+
+  const canvasWidth = state.canvasWidth;
+  const labelWorld  = 1.6;
+  const annWorld    = 1.6;
+  const worldWidth  = labelWorld + canvasWidth + annWorld;
+
+  const pctLeft  = xW => (xW / worldWidth) * 100;
+  const pctWidth = wW => (wW / worldWidth) * 100;
+
+  const flex = document.createElement('div');
+  flex.style.cssText = 'display:flex;gap:4px;height:100%;width:100%;';
+
+  bounds.forEach(([y0, y1]) => {
+    const yRange = y1 - y0;
+    const panel = document.createElement('div');
+    panel.style.cssText =
+      'position:relative;flex:1;overflow:hidden;background:#fff;' +
+      'border:1px solid #ddd;border-radius:4px;min-width:60px;';
+
+    if (yRange <= 0) { flex.appendChild(panel); return; }
+
+    const pctTop = wy => 100 - ((wy - y0) / yRange) * 100;
+    const pctH   = h  => (h / yRange) * 100;
+
+    /* ---- Films ---- */
+    filmsWithY.forEach(f => {
+      if (f.y1 <= y0 || f.y0 >= y1) return;
+      const vy0 = Math.max(f.y0, y0);
+      const vy1 = Math.min(f.y1, y1);
+
+      const div = document.createElement('div');
+      div.style.cssText =
+        `position:absolute;left:${pctLeft(labelWorld)}%;` +
+        `width:${pctWidth(canvasWidth)}%;` +
+        `top:${pctTop(vy1)}%;height:${pctH(vy1 - vy0)}%;` +
+        `background:${f.color};opacity:0.85;`;
+      panel.appendChild(div);
+
+      if (vy1 - vy0 > f.thickness * 0.25) {
+        const lb = document.createElement('div');
+        lb.style.cssText =
+          `position:absolute;left:0;width:${pctLeft(labelWorld)}%;` +
+          `top:${(pctTop(vy1) + pctTop(vy0)) / 2}%;` +
+          `transform:translateY(-50%);text-align:right;padding-right:5px;` +
+          `font-size:11px;color:#333;white-space:nowrap;` +
+          `overflow:hidden;text-overflow:ellipsis;pointer-events:none;`;
+        lb.textContent = `${f.name} (${f.thickness} nm)`;
+        panel.appendChild(lb);
+      }
+    });
+
+    /* ---- Conductors ---- */
+    conductors.forEach(c => {
+      if (c.y1 <= y0 || c.y0 >= y1) return;
+      const vy0 = Math.max(c.y0, y0);
+      const vy1 = Math.min(c.y1, y1);
+
+      const cx = canvasWidth / 2;
+      const xWorld = labelWorld + cx - c.width / 2;
+      const wWorld = c.width;
+      const isVia = c.type === 'via';
+
+      const div = document.createElement('div');
+      let stripes = '';
+      if (isVia) {
+        stripes = `background-image:repeating-linear-gradient(45deg,` +
+                  `rgba(255,255,255,0.4) 0 2px,transparent 2px 5px);`;
+      }
+      div.style.cssText =
+        `position:absolute;left:${pctLeft(xWorld)}%;` +
+        `width:${pctWidth(wWorld)}%;` +
+        `top:${pctTop(vy1)}%;height:${pctH(vy1 - vy0)}%;` +
+        `background-color:${c.color};${stripes}` +
+        `border:1px solid rgba(0,0,0,0.3);z-index:3;`;
+      panel.appendChild(div);
+
+      if (vy1 - vy0 > c.thickness * 0.25 && c.width > canvasWidth * 0.08) {
+        const lb = document.createElement('div');
+        lb.style.cssText =
+          `position:absolute;left:${pctLeft(xWorld)}%;` +
+          `width:${pctWidth(wWorld)}%;` +
+          `top:${(pctTop(vy1) + pctTop(vy0)) / 2}%;` +
+          `transform:translateY(-50%);text-align:center;` +
+          `font-size:9px;color:#fff;font-weight:bold;` +
+          `text-shadow:0 0 2px #000;pointer-events:none;` +
+          `overflow:hidden;white-space:nowrap;`;
+        lb.textContent = c.name;
+        panel.appendChild(lb);
+      }
+    });
+
+    /* ---- Repeat Annotations ---- */
+    state.repeatAnnotations.forEach(ann => {
+      const [i0, i1] = ann.metalIndices;
+      if (i0 < 0 || i1 < 0) return;
+      if (i0 >= metalsWithY.length || i1 >= metalsWithY.length) return;
+      const gy0 = metalsWithY[i0].y0;
+      const gy1 = metalsWithY[i1].y1;
+      if (gy1 <= y0 || gy0 >= y1) return;
+      const vy0 = Math.max(gy0, y0);
+      const vy1 = Math.min(gy1, y1);
+      if (vy1 - vy0 < 3) return;
+
+      const color = ann.color || '#d62828';
+      const label = ann.label || `×${ann.count}`;
+
+      const bx = labelWorld + canvasWidth + 0.20;
+      const bxPct = pctLeft(bx);
+      const topPct = pctTop(vy1);
+      const botPct = pctTop(vy0);
+
+      const line = document.createElement('div');
+      line.style.cssText =
+        `position:absolute;left:${bxPct}%;top:${topPct}%;` +
+        `height:${botPct - topPct}%;width:2px;` +
+        `background:${color};z-index:4;`;
+      panel.appendChild(line);
+
+      [topPct, botPct].forEach(t => {
+        const tick = document.createElement('div');
+        tick.style.cssText =
+          `position:absolute;left:${bxPct}%;top:${t}%;` +
+          `width:6px;height:2px;background:${color};` +
+          `transform:translateX(-6px);z-index:4;`;
+        panel.appendChild(tick);
+      });
+
+      const txt = document.createElement('div');
+      txt.style.cssText =
+        `position:absolute;left:${bxPct}%;` +
+        `top:${(topPct + botPct) / 2}%;` +
+        `transform:translateY(-50%);margin-left:8px;` +
+        `color:${color};font-weight:bold;font-size:13px;` +
+        `white-space:nowrap;z-index:4;pointer-events:none;`;
+      txt.textContent = label;
+      panel.appendChild(txt);
+    });
+
+    flex.appendChild(panel);
+  });
+
+  container.appendChild(flex);
+}
+
+/* =========================================================
+   7. 3D RENDER — opaque boundary mesh, no intersecting boxes
+========================================================= */
+let three = null;
+
+function disposeObject(root) {
+  const materials = new Set();
+  root.traverse(obj => {
+    obj.geometry?.dispose();
+    if (obj.material) {
+      (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach(m => materials.add(m));
+    }
+  });
+  materials.forEach(m => m.dispose());
+}
+
+function dispose3D() {
+  if (!three) return;
+  cancelAnimationFrame(three.animId);
+  three.observer.disconnect();
+  three.controls.dispose();
+  disposeObject(three.scene);
+  three.renderer.dispose();
+  three.container.replaceChildren();
+  three = null;
+}
+
+function init3D(container) {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#f3f5f8');
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+  } catch (error) {
+    container.textContent = '无法初始化 WebGL，请开启浏览器硬件加速后重试。';
+    console.error(error);
+    return null;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.18;
+  renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;';
+  renderer.domElement.setAttribute('aria-label', 'Film stack 3D viewer; drag to rotate, scroll to zoom');
+  container.replaceChildren(renderer.domElement);
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'viewer-toolbar';
+  const reset = document.createElement('button');
+  reset.textContent = '重置视角';
+  reset.addEventListener('click', () => fitCamera3D());
+  toolbar.appendChild(reset);
+  container.appendChild(toolbar);
+  const status = document.createElement('div');
+  status.className = 'viewer-status';
+  container.appendChild(status);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.09;
+  controls.screenSpacePanning = true;
+  scene.add(new THREE.HemisphereLight(0xf4f7ff, 0x8c929f, 2.1));
+  const key = new THREE.DirectionalLight(0xffffff, 2.5);
+  key.position.set(24, 40, 32);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xcadfff, 1.0);
+  fill.position.set(-24, 12, -16);
+  scene.add(fill);
+
+  const context = { scene, camera, renderer, controls, container, status,
+    group: null, radius: 16, fitted: false, animId: 0, observer: null };
+  const resize = () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    if (!w || !h) return;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  };
+  context.observer = new ResizeObserver(resize);
+  context.observer.observe(container);
+  resize();
+  const animate = () => {
+    context.animId = requestAnimationFrame(animate);
+    if (currentView !== '3d' || document.hidden) return;
+    controls.update();
+    // Tighten the frustum around the actual bounding sphere on every orbit/zoom.
+    // Use distance to the model origin, not the panned controls target.
+    const distance = camera.position.length();
+    camera.near = Math.max(context.radius / 2000, distance - context.radius * 1.06);
+    camera.far = Math.max(camera.near + 1, distance + context.radius * 1.1);
+    camera.updateProjectionMatrix();
+    renderer.render(scene, camera);
+  };
+  context.animId = requestAnimationFrame(animate);
+  return context;
+}
+
+function fitCamera3D() {
+  if (!three) return;
+  const { camera, controls, radius } = three;
+  const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
+  const halfH = Math.atan(Math.tan(halfV) * camera.aspect);
+  const distance = radius / Math.sin(Math.min(halfV, halfH)) * 1.12;
+  // Clear remaining orbit/pan inertia before applying the new pose.
+  const damping = controls.enableDamping;
+  controls.enableDamping = false;
+  controls.update();
+  controls.enableDamping = damping;
+  controls.target.set(0, 0, 0);
+  camera.position.copy(new THREE.Vector3(1, 0.65, 1).normalize().multiplyScalar(distance));
+  controls.update();
+  controls.saveState();
+  three.fitted = true;
+}
+
+/* Rectilinear solid boundary extraction. All films, conductors and cut planes
+   share ONE coordinate grid. Metal replaces dielectric within occupied cells.
+   Only solid/air boundaries produce triangles: shared and buried faces never
+   enter the depth buffer. No epsilon gaps, translucent volume sorting or CSG
+   tolerance is needed; original layer thicknesses remain intact. */
+function buildStackSurface(films, conductors, options) {
+  const { scaleY, scaleXZ, cutEnabled, cutFraction, showFilms, edges } = options;
+  const width = 12, half = width / 2;
+  const cut = half - width * cutFraction;
+  const boxes = [];
+  const palette = [];
+  function box(x0, x1, y0, y1, z0, z1, item, metal) {
+    if (![x0,x1,y0,y1,z0,z1].every(Number.isFinite) || x1 <= x0 || y1 <= y0 || z1 <= z0) return;
+    const id = palette.length;
+    palette.push({ color: toHexColor(item.color), metal });
+    boxes.push({ lo: [x0, y0, z0], hi: [x1, y1, z1], id });
+  }
+  if (showFilms) films.forEach(f => box(-half, half, f.y0 * scaleY, f.y1 * scaleY, -half, half, f, false));
+  conductors.forEach(c => {
+    const h = Math.max(0, Number(c.width) || 0) * scaleXZ / 2;
+    box(-h, h, c.y0 * scaleY, c.y1 * scaleY, -h, h, c, true);
+  });
+  const group = new THREE.Group();
+  if (!boxes.length) return group;
+  const axes = [0, 1, 2].map(a => {
+    const values = boxes.flatMap(b => [b.lo[a], b.hi[a]]);
+    if (cutEnabled && a !== 1) values.push(cut);
+    return [...new Set(values)].sort((a,b) => a-b);
+  });
+  const [xs, ys, zs] = axes;
+  const nx = xs.length - 1, ny = ys.length - 1, nz = zs.length - 1;
+  // Protect the UI from pathological imports with thousands of unique widths.
+  if (nx * ny * nz > 4000000) throw new Error('模型过于复杂，请减少独立层宽或层数（网格超过 400 万单元）。');
+  const cells = new Int32Array(nx * ny * nz).fill(-1);
+  const index = (i,j,k) => (j * nz + k) * nx + i;
+  const maps = axes.map(axis => new Map(axis.map((v,i) => [v,i])));
+  boxes.forEach(b => {
+    const lo = b.lo.map((v,a) => maps[a].get(v));
+    const hi = b.hi.map((v,a) => maps[a].get(v));
+    for (let j=lo[1]; j<hi[1]; j++) for (let k=lo[2]; k<hi[2]; k++) for (let i=lo[0]; i<hi[0]; i++) {
+      if (cutEnabled && xs[i] >= cut && zs[k] >= cut) continue;
+      cells[index(i,j,k)] = b.id; // Later conductor volumes replace dielectric.
+    }
+  });
+  const occupied = (i,j,k) => i>=0 && i<nx && j>=0 && j<ny && k>=0 && k<nz && cells[index(i,j,k)]>=0;
+  const vertices = palette.map(() => []);
+  const outline = new Map();
+  const directions = [[-1,0,0],[1,0,0],[0,-1,0],[0,1,0],[0,0,-1],[0,0,1]];
+  for (let j=0; j<ny; j++) for (let k=0; k<nz; k++) for (let i=0; i<nx; i++) {
+    const id = cells[index(i,j,k)];
+    if (id < 0) continue;
+    const ijk = [i,j,k];
+    for (let d=0; d<6; d++) {
+      const delta = directions[d];
+      if (occupied(i+delta[0], j+delta[1], k+delta[2])) continue;
+      const a = Math.floor(d/2), sign = d%2 ? 1 : -1;
+      const u = (a+1)%3, v = (a+2)%3;
+      const pts = [[0,0],[1,0],[1,1],[0,1]].map(([du,dv]) => {
+        const p = [0,0,0];
+        p[a] = axes[a][ijk[a] + (sign>0 ? 1 : 0)];
+        p[u] = axes[u][ijk[u]+du]; p[v] = axes[v][ijk[v]+dv];
+        return p;
+      });
+      const order = sign>0 ? [0,1,2,0,2,3] : [0,2,1,0,3,2];
+      order.forEach(n => vertices[id].push(...pts[n]));
+      if (edges) for (let e=0; e<4; e++) {
+        const p = pts[e], q = pts[(e+1)%4];
+        const keys = [p.join(','),q.join(',')].sort();
+        const key = keys.join('|');
+        const prev = outline.get(key);
+        if (!prev) outline.set(key, {p,q,id,d,count:1,keep:false});
+        else { prev.count++; if (prev.id !== id || prev.d !== d) prev.keep = true; }
+      }
+    }
+  }
+  vertices.forEach((array,id) => {
+    if (!array.length) return;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(array,3));
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    const entry = palette[id];
+    const material = new THREE.MeshStandardMaterial({
+      color: entry.color, roughness: entry.metal ? 0.46 : 0.82,
+      metalness: entry.metal ? 0.28 : 0,
+      side: THREE.FrontSide, transparent: false, depthWrite: true, depthTest: true,
+      polygonOffset: edges, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+    });
+    group.add(new THREE.Mesh(geometry, material));
+  });
+  if (edges) {
+    const segments = [];
+    outline.forEach(e => { if (e.count === 1 || e.keep) segments.push(...e.p,...e.q); });
+    if (segments.length) {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(segments,3));
+      group.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
+        color: 0x5b6370, depthTest: true, depthWrite: false,
+      })));
+    }
+  }
+  group.userData.cellCount = cells.length;
+  return group;
+}
+
+function render3D() {
+  const container = document.getElementById('view-3d');
+  if (!three) three = init3D(container);
+  if (!three) return;
+  const films = positions(state.films,0);
+  const conductors = positions(state.conductors,state.stackStartY);
+  const extents = [...films, ...conductors];
+  const minY = Math.min(0,...extents.map(f => f.y0));
+  const maxY = Math.max(1,...extents.map(f => f.y1));
+  let group;
+  try {
+    group = buildStackSurface(films,conductors, {
+      scaleY: 26 / Math.max(1,maxY-minY),
+      scaleXZ: 12 / Math.max(0.001,Number(state.canvasWidth)||0.001),
+      cutEnabled: state.cutCorner3D && state.cutSize3D > 0,
+      cutFraction: Math.max(0,Math.min(0.5,(Number(state.cutSize3D)||0)/100)),
+      showFilms: state.showFilms3D, edges: state.showEdges3D,
+    });
+  } catch (error) {
+    three.status.textContent = error.message;
+    return;
+  }
+  if (three.group) {
+    three.scene.remove(three.group);
+    disposeObject(three.group);
+  }
+  three.group = group;
+  const bbox = new THREE.Box3().setFromObject(group);
+  if (!bbox.isEmpty()) {
+    group.position.sub(bbox.getCenter(new THREE.Vector3()));
+    three.radius = Math.max(1,bbox.getSize(new THREE.Vector3()).length()/2);
+  }
+  three.scene.add(group);
+  three.controls.minDistance = three.radius * 0.08;
+  three.controls.maxDistance = three.radius * 16;
+  if (!three.fitted && !bbox.isEmpty()) fitCamera3D();
+  three.status.textContent = bbox.isEmpty() ? '暂无可显示的实体' :
+    '拖动旋转 · 滚轮缩放 · 右键平移  |  ' +
+    (state.cutCorner3D ? '实体剖切' : '完整实体') +
+    (state.showFilms3D ? ' · 隐藏介质可查看内部导体' : ' · 仅显示导体');
+}
+
+window.addEventListener('pagehide', dispose3D);
+
+/* =========================================================
+   8. INIT
+========================================================= */
+renderSidebar();
+scheduleRender();
+</script>
+</body>
+</html>

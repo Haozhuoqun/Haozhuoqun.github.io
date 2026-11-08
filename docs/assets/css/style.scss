@@ -2,3 +2,56 @@
 ---
 
 @import "jekyll-theme-minimal";
+
+.semi-tools {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+}
+
+.semi-tool {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #dce3eb;
+  border-radius: 10px;
+  background: #fafbfd;
+  color: #12547d;
+}
+
+.semi-tool:hover,
+.semi-tool:focus-visible {
+  border-color: #4683a6;
+  background: #f1f6fa;
+  color: #12547d;
+  font-weight: inherit;
+}
+
+.semi-tool:focus-visible {
+  outline: 2px solid #12547d;
+  outline-offset: 2px;
+}
+
+.semi-tool img {
+  display: block;
+  border-radius: 8px;
+}
+
+.semi-tool strong {
+  color: inherit;
+  font-size: 16px;
+}
+
+.semi-tool:hover strong,
+.semi-tool:focus-visible strong {
+  text-decoration: underline;
+}
+
+.semi-tool-description {
+  display: block;
+  margin-top: 2px;
+  color: #4b5563;
+}

@@ -1,0 +1,47 @@
+---
+layout: default
+title: Semi-toolbox
+description: Browser-based tools for reticle layout, thin films, wafer mapping, and stack alignment.
+tools:
+  - name: Reticle Builder
+    icon: reticle-builder.svg
+    path: /reticle-builder/
+    description: Arrange dies on a reticle and export the layout as GDSII.
+  - name: Reticle Studio
+    icon: reticle-studio.webp
+    path: /reticle-studio/Reticle-Studio-v3.2.html
+    description: Draw step-and-shot diagrams from die arrays, scribe lanes, and exposure overlaps.
+  - name: Metal Opacity
+    icon: metal-opacity.webp
+    path: /metal-opacity/
+    description: Calculate transmission, reflection, and absorption across metal film thicknesses or wavelengths.
+  - name: Film Stack Visualizer
+    icon: film-stack-visualizer.webp
+    path: /film-stack-visualizer/film-stack-visualizer.html
+    description: Build multilayer film stacks and inspect their cross-sections in 2D and 3D.
+  - name: Wafer Map
+    icon: wafermap.webp
+    path: /wafermap/
+    description: Generate a die map for a wafer with configurable dimensions and edge exclusion.
+  - name: Wafer Align
+    icon: wafer-align.webp
+    path: /wafer-align/wafer-align-offline.html
+    description: Overlay wafer layers and check die-edge offsets against a tolerance.
+---
+<h1>{{ page.title }}</h1>
+<p>{{ page.description }}</p>
+
+<ul class="semi-tools">
+  {% for tool in page.tools %}
+  {% assign icon_path = '/semi-toolbox/icons/' | append: tool.icon %}
+  <li>
+    <a class="semi-tool" href="{{ tool.path | relative_url }}">
+      <img src="{{ icon_path | relative_url }}" alt="" width="64" height="64">
+      <span>
+        <strong>{{ tool.name }}</strong>
+        <span class="semi-tool-description">{{ tool.description }}</span>
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
